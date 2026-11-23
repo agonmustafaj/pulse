@@ -1,0 +1,14 @@
+{
+  "name": "pulse",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PULSE — global signal intelligence platform (Cloudflare Pages frontend)",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "dev:static": "npx --yes serve dist -l 4173",
+    "postinstall": "node -e \"console.log('PULSE: run npm run build to produce dist/')\""
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
