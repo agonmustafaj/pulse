@@ -2,9 +2,10 @@
 /**
  * Cloudflare Pages build: copy frontend/ → dist/ and inject API base.
  *
- * Set PULSE_API_BASE (or VITE_API_BASE) in Pages environment variables to the
- * publicly reachable FastAPI origin, e.g. https://pulse-api.example.com
- * Leave empty for same-origin (local uvicorn serving dist/).
+ * Production (Orbit-style): leave PULSE_API_BASE empty so the SPA calls
+ * same-origin /api/* served by Cloudflare Pages Functions in functions/.
+ * Optionally set PULSE_API_BASE to an absolute FastAPI origin for a split host.
+ * Functions live at repo-root functions/ — they are NOT copied into dist/.
  */
 import { cpSync, mkdirSync, rmSync, writeFileSync, existsSync, readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
@@ -43,6 +44,7 @@ if (apiBase && process.env.PULSE_PAGES_PROXY === "1") {
   redirects.push(`/api/*  ${apiBase}/api/:splat  200`);
   redirects.push(`/ws/*   ${apiBase}/ws/:splat   200`);
 }
+// SPA fallback. Pages Functions for /api/* take precedence over this rewrite.
 redirects.push("/*    /index.html   200");
 writeFileSync(join(dist, "_redirects"), redirects.join("\n") + "\n");
 

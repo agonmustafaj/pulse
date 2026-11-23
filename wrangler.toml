@@ -1,0 +1,5 @@
+# Optional local/dev config for `wrangler pages dev`.
+# Production Cloudflare Pages (Git) uses dashboard build settings + repo-root functions/.
+name = "pulse"
+compatibility_date = "2024-11-12"
+pages_build_output_dir = "dist"
