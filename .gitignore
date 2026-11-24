@@ -7,6 +7,7 @@ venv/
 .DS_Store
 node_modules/
 dist/
+.wrangler/
 .cache/
 *.log
 .pytest_cache/

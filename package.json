@@ -2,10 +2,13 @@
   "name": "pulse",
   "version": "1.0.0",
   "private": true,
-  "description": "PULSE — global signal intelligence platform (Cloudflare Pages frontend)",
+  "type": "module",
+  "description": "PULSE — global signal intelligence platform (Cloudflare Pages frontend + Functions API)",
   "scripts": {
     "build": "node scripts/build.mjs",
+    "dev:pages": "npm run build && npx --yes wrangler@4 pages dev dist --port 8788",
     "dev:static": "npx --yes serve dist -l 4173",
+    "smoke:functions": "node scripts/smoke-functions.mjs",
     "postinstall": "node -e \"console.log('PULSE: run npm run build to produce dist/')\""
   },
   "engines": {
