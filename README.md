@@ -127,7 +127,7 @@ Local OpenAPI: `/api/docs` (FastAPI).
 | FX | Frankfurter / ECB |
 | Equities / indices | Yahoo Finance chart API (delayed) |
 | News | BBC / Guardian / NASA RSS (+ optional NewsAPI) |
-| Map tiles | CARTO Dark Matter via MapLibre (OSM attribution) |
+| Map tiles | OpenFreeMap dark/positron via MapLibre (OSM attribution, no API key) |
 
 ---
 
