@@ -1,34 +1,10 @@
-const STYLE_DARK = {
-  version: 8,
-  name: "PULSE Dark",
-  glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
-  sources: {
-    carto: {
-      type: "raster",
-      tiles: [
-        "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
-        "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
-      ],
-      tileSize: 256,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
-    },
-  },
-  layers: [{ id: "carto", type: "raster", source: "carto" }],
-};
+// OpenFreeMap — free vector styles, no API key required.
+// https://openfreemap.org/
+const STYLE_DARK = "https://tiles.openfreemap.org/styles/dark";
+const STYLE_LIGHT = "https://tiles.openfreemap.org/styles/positron";
 
-const STYLE_LIGHT = {
-  ...STYLE_DARK,
-  name: "PULSE Light",
-  sources: {
-    carto: {
-      ...STYLE_DARK.sources.carto,
-      tiles: [
-        "https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
-        "https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
-      ],
-    },
-  },
-};
+const OSM_ATTRIBUTION =
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
 export function createMap(container, { center = [10, 20], zoom = 1.4 } = {}) {
   const map = new maplibregl.Map({
@@ -36,7 +12,7 @@ export function createMap(container, { center = [10, 20], zoom = 1.4 } = {}) {
     style: STYLE_DARK,
     center,
     zoom,
-    attributionControl: true,
+    attributionControl: { compact: true, customAttribution: OSM_ATTRIBUTION },
   });
   map.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), "top-left");
   map.addControl(new maplibregl.ScaleControl({ maxWidth: 100 }), "bottom-left");
