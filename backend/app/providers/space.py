@@ -74,11 +74,14 @@ async def fetch_launches(limit: int = 12) -> list[Launch]:
     return launches
 
 
-async def fetch_apod() -> APOD | None:
+async def fetch_apod(date: str | None = None) -> APOD | None:
     settings = get_settings()
     key = settings.nasa_api_key or "DEMO_KEY"
+    params: dict[str, str] = {"api_key": key}
+    if date:
+        params["date"] = date
     try:
-        data = await fetch_json(APOD_URL, params={"api_key": key})
+        data = await fetch_json(APOD_URL, params=params)
         if data.get("code") or data.get("error"):
             return None
         return APOD(

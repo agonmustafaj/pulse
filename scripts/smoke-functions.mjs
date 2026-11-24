@@ -36,6 +36,9 @@ function summarize(data) {
   if (data.items) return `items=${data.items.length} total=${data.total ?? data.items.length}`;
   if (data.current) return `city=${data.current.location} temp=${data.current.temperature_c}`;
   if (data.iss) return `iss=${data.iss.latitude?.toFixed?.(2)},${data.iss.longitude?.toFixed?.(2)} launches=${data.launches?.length}`;
+  if (data.apod) return `apod=${data.apod.date || data.date} title=${(data.apod.title || "").slice(0, 40)}`;
+  if (data.missing) return `missing date=${data.date} msg=${(data.message || "").slice(0, 40)}`;
+  if (data.planets) return `planets=${data.planets.length} epoch=${data.epoch}`;
   if (data.latitude != null) return `lat=${data.latitude} lon=${data.longitude}`;
   if (data.by_category) return `cats=${data.by_category.length}`;
   if (data.status) return `status=${data.status}`;
@@ -47,7 +50,7 @@ const { getEvents } = await import(lib("services/events.js"));
 const { getNews } = await import(lib("services/news.js"));
 const { getWeather, searchCities } = await import(lib("services/weather.js"));
 const { getMarkets, getHistory } = await import(lib("services/markets.js"));
-const { getSpace, getIss } = await import(lib("services/space.js"));
+const { getSpace, getIss, getApod, getPlanets, getNeos } = await import(lib("services/space.js"));
 const { getAnalytics } = await import(lib("services/analytics.js"));
 const { search } = await import(lib("services/search.js"));
 
@@ -60,6 +63,13 @@ await check("markets", () => getMarkets());
 await check("markets/history", () => getHistory("AAPL", "1m"));
 await check("space/iss", () => getIss());
 await check("space", () => getSpace({}));
+await check("space/apod-date", () => getApod({}, "2015-07-14"));
+await check("space/apod-invalid", async () => {
+  const r = await getApod({}, "1900-01-01");
+  return { ok: r.missing === true, missing: r.missing, message: r.message };
+});
+await check("space/planets", () => getPlanets());
+await check("space/neos", () => getNeos({}));
 await check("analytics", () => getAnalytics({}));
 await check("search", () => search({}, "quake"));
 

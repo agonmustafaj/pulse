@@ -44,6 +44,13 @@ function boot() {
   refreshIcons();
   initSearch();
   $("#drawer-close").addEventListener("click", closeDrawer);
+  document.querySelectorAll("[data-nav]").forEach((el) => {
+    el.addEventListener("click", (e) => {
+      e.preventDefault();
+      const path = el.getAttribute("data-nav") || el.getAttribute("href") || "/";
+      import("./router.js").then(({ navigate }) => navigate(path));
+    });
+  });
   window.addEventListener("popstate", route);
   tickClock();
   setInterval(tickClock, 1000);
