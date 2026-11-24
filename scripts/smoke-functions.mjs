@@ -63,7 +63,12 @@ await check("markets", () => getMarkets());
 await check("markets/history", () => getHistory("AAPL", "1m"));
 await check("space/iss", () => getIss());
 await check("space", () => getSpace({}));
-await check("space/apod-date", () => getApod({}, "2015-07-14"));
+await check("space/apod-date", async () => {
+  const r = await getApod({}, "2026-11-24");
+  const url = r.apod?.display_url || r.apod?.url || "";
+  const ok = r.ok && r.apod && !/nasa-logo|nasa-child/i.test(url);
+  return { ok, title: r.apod?.title, url: url.slice(0, 80) };
+});
 await check("space/apod-invalid", async () => {
   const r = await getApod({}, "1900-01-01");
   return { ok: r.missing === true, missing: r.missing, message: r.message };

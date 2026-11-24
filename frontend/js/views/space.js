@@ -245,7 +245,12 @@ async function load() {
       });
     });
 
-    if (data.apod) {
+    if (data.apod_meta?.needs_api_key || data.has_nasa_key === false) {
+      document.getElementById("apod-detail").innerHTML = renderApodCard(null, {
+        needsKey: true,
+        message: data.apod_meta?.message,
+      });
+    } else if (data.apod) {
       currentApodDate = data.apod.date || todayUTC();
       const input = document.getElementById("space-apod-date-input");
       if (input) input.value = currentApodDate;
@@ -267,8 +272,10 @@ async function loadApod(date) {
   if (input) input.value = currentApodDate;
 
   const data = await fetchApodByDate(currentApodDate);
-  if (!data.ok || !data.apod) {
-    el.innerHTML = renderApodEmpty(data.message, data.date || currentApodDate);
+  if (data.needs_api_key || !data.ok || !data.apod) {
+    el.innerHTML = renderApodEmpty(data.message, data.date || currentApodDate, {
+      needsKey: Boolean(data.needs_api_key),
+    });
     return;
   }
   el.innerHTML = renderApodCard(data.apod);

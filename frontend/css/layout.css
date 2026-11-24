@@ -519,6 +519,19 @@
   margin-bottom: 8px;
 }
 
+.apod-needs-key {
+  border: 1px solid rgba(94, 200, 242, 0.25);
+  border-radius: 10px;
+  max-width: 520px;
+  margin: 0 auto;
+  background: rgba(7, 11, 20, 0.55);
+}
+
+.apod-needs-key .apod-empty-title {
+  color: var(--cyan);
+  letter-spacing: 0.04em;
+}
+
 /* Orbit section */
 
 .orbit-section,

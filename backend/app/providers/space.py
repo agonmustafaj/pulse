@@ -12,6 +12,22 @@ LAUNCHES_URL = "https://ll.thespacedevs.com/2.2.0/launch/upcoming/"
 APOD_URL = "https://api.nasa.gov/planetary/apod"
 
 
+def _is_placeholder_url(url: str | None) -> bool:
+    if not url:
+        return True
+    u = url.lower()
+    return any(
+        s in u
+        for s in (
+            "nasa-logo",
+            "/themes/nasa-child/",
+            "nasa-logo@2x",
+            "favicon",
+            "science.nasa.gov/wp-content/themes/",
+        )
+    )
+
+
 async def fetch_iss() -> ISSPosition:
     try:
         data = await fetch_json(ISS_URL)
@@ -41,7 +57,7 @@ async def fetch_iss() -> ISSPosition:
 
 
 async def fetch_launches(limit: int = 12) -> list[Launch]:
-    data = await fetch_json(LAUNCHES_URL, params={"limit": limit, "mode": "detailed"})
+    data = await fetch_json(LAUNCHES_URL, params={"limit": limit, "mode": "list"})
     launches: list[Launch] = []
     for item in data.get("results") or []:
         pad = item.get("pad") or {}
@@ -74,21 +90,47 @@ async def fetch_launches(limit: int = 12) -> list[Launch]:
     return launches
 
 
-async def fetch_apod(date: str | None = None) -> APOD | None:
+async def fetch_apod(date: str | None = None) -> APOD | dict | None:
     settings = get_settings()
-    key = settings.nasa_api_key or "DEMO_KEY"
-    params: dict[str, str] = {"api_key": key}
+    key = (settings.nasa_api_key or "").strip()
+    if not key or key == "DEMO_KEY":
+        return {
+            "needs_api_key": True,
+            "missing": False,
+            "date": date,
+            "message": "Add NASA_API_KEY to load Astronomy Picture of the Day.",
+        }
+    params: dict[str, str] = {"api_key": key, "thumbs": "true"}
     if date:
         params["date"] = date
     try:
         data = await fetch_json(APOD_URL, params=params)
         if data.get("code") or data.get("error"):
             return None
+        url = data.get("url")
+        hdurl = data.get("hdurl")
+        if _is_placeholder_url(url) or _is_placeholder_url(hdurl) or data.get("title") == "NASA Science":
+            if _is_placeholder_url(url) and _is_placeholder_url(hdurl):
+                return {
+                    "missing": True,
+                    "date": data.get("date") or date,
+                    "message": "NASA returned placeholder logo media instead of APOD.",
+                }
+        if _is_placeholder_url(url):
+            url = None
+        if _is_placeholder_url(hdurl):
+            hdurl = None
+        if not url and not hdurl and data.get("media_type") == "image":
+            return {
+                "missing": True,
+                "date": data.get("date") or date,
+                "message": "NASA returned no usable APOD media for this date.",
+            }
         return APOD(
             title=data.get("title"),
             explanation=data.get("explanation"),
-            url=data.get("url"),
-            hdurl=data.get("hdurl"),
+            url=url,
+            hdurl=hdurl,
             media_type=data.get("media_type"),
             date=data.get("date"),
             copyright=data.get("copyright"),

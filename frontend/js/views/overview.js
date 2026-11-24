@@ -131,14 +131,23 @@ async function loadApod(date) {
   const input = document.getElementById("home-apod-date-input");
   if (input) input.value = currentApodDate;
 
-  if (!data.ok || !data.apod) {
-    visual.innerHTML = renderApodEmpty(data.message, data.date || currentApodDate);
-    caption.textContent = data.message || "No image for this date";
+  if (data.needs_api_key || !data.ok || !data.apod) {
+    visual.innerHTML = renderApodEmpty(data.message, data.date || currentApodDate, {
+      needsKey: Boolean(data.needs_api_key),
+    });
+    caption.textContent = data.needs_api_key
+      ? "Add NASA_API_KEY on Cloudflare Pages (Preview + Production)"
+      : data.message || "No image for this date";
     return;
   }
 
   const apod = data.apod;
   visual.innerHTML = renderApodHeroMedia(apod, { hero: true });
+  if (!visual.querySelector(".apod-media, .apod-video-thumb")) {
+    visual.innerHTML = renderApodEmpty("NASA returned no usable APOD media for this date.", currentApodDate);
+    caption.textContent = "APOD media unavailable";
+    return;
+  }
   caption.textContent = `${apod.title || "APOD"} · ${apod.date || currentApodDate}${
     apod.copyright ? ` · © ${apod.copyright}` : ""
   } · NASA`;

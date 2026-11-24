@@ -6,6 +6,7 @@ import {
   fetchApodRange,
   fetchNeos,
   computePlanets,
+  hasNasaApiKey,
 } from "../providers/space.js";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -54,8 +55,27 @@ export async function getApod(env = {}, date) {
     return {
       ok: false,
       missing: false,
+      needs_api_key: !hasNasaApiKey(env),
+      has_nasa_key: hasNasaApiKey(env),
       date: date || null,
       message: String(err.message || err),
+      apod: null,
+      source: "NASA APOD",
+      updated_at: new Date().toISOString(),
+      cached: false,
+    };
+  }
+
+  if (apod?.needs_api_key) {
+    return {
+      ok: false,
+      missing: false,
+      needs_api_key: true,
+      has_nasa_key: false,
+      date: apod.date || date || null,
+      message:
+        apod.message ||
+        "Add NASA_API_KEY in Cloudflare Pages (Production + Preview) to load Astronomy Picture of the Day.",
       apod: null,
       source: "NASA APOD",
       updated_at: new Date().toISOString(),
@@ -67,6 +87,8 @@ export async function getApod(env = {}, date) {
     return {
       ok: false,
       missing: true,
+      needs_api_key: false,
+      has_nasa_key: hasNasaApiKey(env),
       date: apod.date || date || null,
       message: apod.message || "No Astronomy Picture of the Day for this date.",
       apod: null,
@@ -79,10 +101,12 @@ export async function getApod(env = {}, date) {
   const resp = {
     ok: Boolean(apod),
     missing: !apod,
+    needs_api_key: false,
+    has_nasa_key: hasNasaApiKey(env),
     date: apod?.date || date || null,
-    message: apod ? null : "APOD unavailable. Set NASA_API_KEY for reliable access.",
+    message: apod ? null : "APOD unavailable.",
     apod,
-    source: apod ? "NASA APOD" : "NASA APOD",
+    source: "NASA APOD",
     updated_at: new Date().toISOString(),
     cached: false,
   };
@@ -157,10 +181,13 @@ export async function getSpace(env = {}, { date } = {}) {
         ? {
             ok: apodPayload.ok,
             missing: apodPayload.missing,
+            needs_api_key: apodPayload.needs_api_key,
+            has_nasa_key: apodPayload.has_nasa_key,
             date: apodPayload.date,
             message: apodPayload.message,
           }
         : null,
+      has_nasa_key: hasNasaApiKey(env),
       planets: planets
         ? { epoch: planets.epoch, planets: planets.planets, sun: planets.sun, attribution: planets.attribution }
         : null,
@@ -172,64 +199,51 @@ export async function getSpace(env = {}, { date } = {}) {
   const cached = await cacheGet("space:bundle");
   if (cached) return { ...cached, cached: true };
 
-  let iss = null;
-  let launches = [];
-  let apod = null;
-  let apodMeta = null;
-  let planets = null;
-  let neos = [];
-  let archive = [];
-  const sources = [];
+  const [issResult, launchesResult, apodResult, archiveResult, planetsResult, neosResult] =
+    await Promise.allSettled([
+      getIss(),
+      fetchLaunches(12),
+      getApod(env),
+      fetchApodRange(env, 8),
+      getPlanets(),
+      getNeos(env),
+    ]);
 
-  try {
-    iss = await getIss();
-    sources.push(iss.source);
-  } catch {
-    /* optional */
-  }
-  try {
-    launches = await fetchLaunches(12);
-    sources.push("The Space Devs");
-  } catch {
-    launches = [];
-  }
-  try {
-    const apodPayload = await getApod(env);
-    apod = apodPayload.apod;
-    apodMeta = {
-      ok: apodPayload.ok,
-      missing: apodPayload.missing,
-      date: apodPayload.date,
-      message: apodPayload.message,
-    };
-    if (apod) sources.push("NASA APOD");
-  } catch {
-    apod = null;
-  }
-  try {
-    archive = await fetchApodRange(env, 8);
-  } catch {
-    archive = [];
-  }
-  try {
-    planets = await getPlanets();
-    if (planets) sources.push(planets.source);
-  } catch {
-    planets = null;
-  }
-  try {
-    const neoPayload = await getNeos(env);
-    neos = neoPayload.items || [];
-    if (neos.length) sources.push("NASA NeoWs");
-  } catch {
-    neos = [];
-  }
+  const sources = [];
+  const iss = issResult.status === "fulfilled" ? issResult.value : null;
+  if (iss) sources.push(iss.source);
+
+  const launches = launchesResult.status === "fulfilled" ? launchesResult.value : [];
+  if (launches.length) sources.push("The Space Devs");
+
+  const apodPayload = apodResult.status === "fulfilled" ? apodResult.value : null;
+  const apod = apodPayload?.apod || null;
+  const apodMeta = apodPayload
+    ? {
+        ok: apodPayload.ok,
+        missing: apodPayload.missing,
+        needs_api_key: apodPayload.needs_api_key,
+        has_nasa_key: apodPayload.has_nasa_key,
+        date: apodPayload.date,
+        message: apodPayload.message,
+      }
+    : null;
+  if (apod) sources.push("NASA APOD");
+
+  const archive = archiveResult.status === "fulfilled" ? archiveResult.value : [];
+  const planets = planetsResult.status === "fulfilled" ? planetsResult.value : null;
+  if (planets) sources.push(planets.source);
+
+  const neoPayload = neosResult.status === "fulfilled" ? neosResult.value : null;
+  const neos = neoPayload?.items || [];
+  if (neos.length) sources.push("NASA NeoWs");
 
   const resp = {
     ok: Boolean(iss || launches.length || apod || planets),
     source: sources.length ? sources : ["space"],
     updated_at: new Date().toISOString(),
     cached: false,
+    has_nasa_key: hasNasaApiKey(env),
     iss,
     launches,
     apod,

@@ -26,16 +26,21 @@ export async function fetchJson(url, { params, headers, timeoutMs = DEFAULT_TIME
   }
 }
 
-export async function fetchText(url, { timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
+export async function fetchText(url, { timeoutMs = DEFAULT_TIMEOUT_MS, headers, redirect = "follow" } = {}) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
     const res = await fetch(url, {
-      headers: { Accept: "application/rss+xml, application/xml, text/xml, */*" },
+      headers: {
+        Accept: "text/html, application/rss+xml, application/xml, text/xml, */*",
+        "User-Agent": "PULSE/1.0 (galaxy; https://pulse-bw6.pages.dev)",
+        ...(headers || {}),
+      },
+      redirect,
       signal: ctrl.signal,
     });
     if (!res.ok) throw new Error(`HTTP ${res.status} fetching ${url}`);
-    return res.text();
+    return { text: await res.text(), finalUrl: res.url || url };
   } finally {
     clearTimeout(timer);
   }

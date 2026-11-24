@@ -102,7 +102,7 @@ APOD dates: **1995-06-16** through today. Invalid / empty dates return `{ ok:fal
 
 | Domain | Provider |
 |--------|----------|
-| APOD | NASA APOD (`NASA_API_KEY`) |
+| APOD | NASA APOD API (`NASA_API_KEY`) + **apod.nasa.gov HTML fallback** when API returns broken logo media |
 | Planets | [JPL SSD approximate positions](https://ssd.jpl.nasa.gov/planets/approx_pos.html) |
 | ISS | wheretheiss.at (+ Open Notify fallback) |
 | Launches | The Space Devs Launch Library 2 |
