@@ -475,7 +475,9 @@ export function parseApodHtml(html, { date = null, baseUrl = "https://apod.nasa.
     }
   }
 
-  if (youtubeUrl) {
+  // Prefer a scored APOD still/image when present — pages often embed incidental YouTube.
+  // Only treat the day as video when there is no usable sky image.
+  if (youtubeUrl && (!best || bestScore < 20)) {
     const thumb = youtubeThumbnail(youtubeUrl) || best;
     return {
       title,
@@ -570,6 +572,8 @@ async function fetchApodFromApi(env, date) {
 function mergeApodMeta(primary, fallback) {
   if (!fallback) return primary;
   if (!primary) return fallback;
+  // HTML/scrape media always wins for url/hdurl/display_url — never keep API logo URLs
+  const display = fallback.display_url || fallback.hdurl || fallback.url;
   return {
     ...fallback,
     title:
@@ -578,6 +582,10 @@ function mergeApodMeta(primary, fallback) {
     copyright: primary.copyright || fallback.copyright,
     date: primary.date || fallback.date,
     source: fallback.source || primary.source,
+    url: fallback.media_type === "video" ? fallback.url || display : display,
+    hdurl: fallback.media_type === "video" ? fallback.hdurl || null : display,
+    display_url: display,
+    placeholder: false,
   };
 }
 

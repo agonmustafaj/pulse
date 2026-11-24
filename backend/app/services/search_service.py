@@ -1,19 +1,27 @@
 from __future__ import annotations
 
+import re
 from datetime import datetime, timezone
 
 from app.schemas.search import SearchResponse, SearchResult
-from app.services import events_service, markets_service, news_service, weather_service
+from app.services import space_service
 
-MARKET_HINTS = [
-    ("sp500", "^GSPC", "S&P 500"),
-    ("s&p", "^GSPC", "S&P 500"),
-    ("nasdaq", "^IXIC", "Nasdaq"),
-    ("bitcoin", "BTC", "Bitcoin"),
-    ("btc", "BTC", "Bitcoin"),
-    ("ethereum", "ETH", "Ethereum"),
-    ("aapl", "AAPL", "Apple"),
-    ("nvda", "NVDA", "NVIDIA"),
+DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+SPACE_HINTS = [
+    ("apod", "/", "Astronomy Picture of the Day", "Explore"),
+    ("astronomy", "/", "Astronomy Picture of the Day", "Explore"),
+    ("cosmos", "/", "Explore the cosmos", "Explore"),
+    ("orbit", "/space", "Orbit", "Orbit"),
+    ("planet", "/space?focus=planets", "Planets in orbit", "Orbit"),
+    ("mars", "/space?focus=planets", "Mars & solar system", "Orbit"),
+    ("jupiter", "/space?focus=planets", "Jupiter & solar system", "Orbit"),
+    ("iss", "/space?focus=iss", "International Space Station", "Orbit"),
+    ("station", "/space?focus=iss", "International Space Station", "Orbit"),
+    ("launch", "/space?focus=launches", "Upcoming launches", "Orbit"),
+    ("rocket", "/space?focus=launches", "Upcoming launches", "Orbit"),
+    ("neo", "/space?focus=neos", "Near-Earth objects", "Orbit"),
+    ("asteroid", "/space?focus=neos", "Near-Earth objects", "Orbit"),
 ]
 
 
@@ -32,105 +40,64 @@ async def search(q: str) -> SearchResponse:
     ql = query.lower()
     results: list[SearchResult] = []
 
-    # Cities
-    try:
-        cities = await weather_service.search_cities(query)
-        for c in cities[:5]:
-            label = f"{c['name']}, {c.get('admin1') or ''} {c.get('country') or ''}".strip().replace("  ", " ")
+    for hint, route, title, category in SPACE_HINTS:
+        if hint in ql:
             results.append(
                 SearchResult(
-                    id=f"city-{c['id']}",
-                    title=c["name"],
-                    subtitle=label,
-                    category="city",
-                    route=f"/weather?city={c['name']}",
-                    meta={"latitude": c["latitude"], "longitude": c["longitude"]},
+                    id=f"hint-{hint}",
+                    title=title,
+                    subtitle=category,
+                    category="space",
+                    route=route,
                 )
             )
-    except Exception:  # noqa: BLE001
-        pass
 
-    # Events
+    if DATE_RE.match(query):
+        results.append(
+            SearchResult(
+                id=f"apod-{query}",
+                title=f"APOD {query}",
+                subtitle="Astronomy Picture of the Day",
+                category="apod",
+                route=f"/?date={query}",
+                meta={"date": query},
+            )
+        )
+
     try:
-        events = await events_service.get_events(limit=200)
-        for e in events.items:
-            hay = f"{e.title} {e.location_name or ''} {e.category}".lower()
+        space = await space_service.get_space()
+        for launch in space.launches or []:
+            name = getattr(launch, "name", "") or ""
+            provider = getattr(launch, "provider", None) or ""
+            launch_id = getattr(launch, "id", None) or name
+            hay = f"{name} {provider}".lower()
             if ql in hay:
                 results.append(
                     SearchResult(
-                        id=e.id,
-                        title=e.title,
-                        subtitle=e.location_name or e.source,
-                        category="event",
-                        route=f"/signals?id={e.id}",
-                        meta={"lat": e.latitude, "lon": e.longitude},
-                    )
-                )
-                if sum(1 for r in results if r.category == "event") >= 8:
-                    break
-    except Exception:  # noqa: BLE001
-        pass
-
-    # News
-    try:
-        news = await news_service.get_news(query=query, limit=8)
-        for a in news.items:
-            results.append(
-                SearchResult(
-                    id=a.id,
-                    title=a.headline,
-                    subtitle=a.source,
-                    category="news",
-                    route=f"/news?id={a.id}",
-                    meta={"url": a.url},
-                )
-            )
-    except Exception:  # noqa: BLE001
-        pass
-
-    # Markets
-    for hint, symbol, name in MARKET_HINTS:
-        if hint in ql or symbol.lower() in ql:
-            results.append(
-                SearchResult(
-                    id=f"mkt-{symbol}",
-                    title=name,
-                    subtitle=symbol,
-                    category="market",
-                    route=f"/markets?symbol={symbol}",
-                )
-            )
-
-    try:
-        markets = await markets_service.get_markets()
-        for m in markets.items:
-            if ql in m.name.lower() or ql in m.symbol.lower():
-                results.append(
-                    SearchResult(
-                        id=f"mkt-{m.symbol}",
-                        title=m.name,
-                        subtitle=m.symbol,
-                        category="market",
-                        route=f"/markets?symbol={m.symbol}",
+                        id=f"launch-{launch_id}",
+                        title=name,
+                        subtitle=provider or "Launch",
+                        category="launch",
+                        route="/space?focus=launches",
                     )
                 )
     except Exception:  # noqa: BLE001
         pass
 
-    # Static section hints
-    for path, title, cat in (
-        ("/map", "Global Map", "section"),
-        ("/signals", "Live Signals", "section"),
-        ("/space", "Orbit — space explorer", "section"),
-        ("/", "Explore — galaxy home", "section"),
-        ("/analytics", "Analytics", "section"),
-    ):
-        if ql in title.lower() or ql in path.strip("/"):
-            results.append(SearchResult(id=f"sec-{path}", title=title, subtitle="Go to section", category=cat, route=path))
+    for path, title in (("/", "Explore"), ("/space", "Orbit")):
+        if ql in title.lower() or (path != "/" and ql in path.strip("/")):
+            results.append(
+                SearchResult(
+                    id=f"sec-{path or 'home'}",
+                    title=title,
+                    subtitle="Go to section",
+                    category="section",
+                    route=path,
+                )
+            )
 
-    # de-dupe by id
-    seen = set()
-    unique = []
+    seen: set[str] = set()
+    unique: list[SearchResult] = []
     for r in results:
         if r.id in seen:
             continue
@@ -139,7 +106,7 @@ async def search(q: str) -> SearchResponse:
 
     return SearchResponse(
         ok=True,
-        source=["events", "news", "weather", "markets"],
+        source=["space", "apod"],
         updated_at=datetime.now(timezone.utc),
         items=unique[:30],
         query=query,

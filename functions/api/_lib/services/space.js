@@ -7,9 +7,58 @@ import {
   fetchNeos,
   computePlanets,
   hasNasaApiKey,
+  isPlaceholderApodUrl,
+  isUsableApodMedia,
 } from "../providers/space.js";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+/** Bump when APOD response shape / fallback logic changes — invalidates Cache API entries. */
+const APOD_CACHE_VER = "v3";
+const BUNDLE_CACHE_KEY = "space:bundle:v3";
+
+function apodCacheKey(date) {
+  return date ? `space:apod:${APOD_CACHE_VER}:${date}` : `space:apod:${APOD_CACHE_VER}:today`;
+}
+
+/** True when a cached/API apod payload still has the broken NASA meatball URLs. */
+export function apodPayloadHasLogo(apod) {
+  if (!apod) return false;
+  if (apod.title === "NASA Science") return true;
+  // Only inspect present URL fields — null hdurl is normal for video APODs
+  const fields = [apod.url, apod.hdurl, apod.display_url, apod.thumbnail_url].filter(
+    (u) => u != null && String(u).trim() !== ""
+  );
+  if (!fields.length) return true;
+  // Logo if every present field is a meatball / theme asset
+  return fields.every((u) => isPlaceholderApodUrl(u));
+}
+
+/** Ensure url/hdurl/display_url are real sky media — never leave logo URLs in the response. */
+export function sanitizeApodFields(apod) {
+  if (!apod || typeof apod !== "object") return null;
+  if (!isUsableApodMedia(apod) || apodPayloadHasLogo(apod)) return null;
+  if (apod.media_type === "video") {
+    const display = apod.display_url || apod.thumbnail_url || null;
+    if (display && isPlaceholderApodUrl(display)) return null;
+    return {
+      ...apod,
+      url: apod.url || display,
+      hdurl: apod.hdurl || null,
+      display_url: display,
+      thumbnail_url: apod.thumbnail_url || display,
+      placeholder: false,
+    };
+  }
+  const display = apod.display_url || apod.hdurl || apod.url;
+  if (!display || isPlaceholderApodUrl(display)) return null;
+  return {
+    ...apod,
+    url: display,
+    hdurl: display,
+    display_url: display,
+    placeholder: false,
+  };
+}
 
 export function isValidApodDate(date) {
   if (!date || !DATE_RE.test(date)) return false;
@@ -44,9 +93,13 @@ export async function getApod(env = {}, date) {
     };
   }
 
-  const key = date ? `space:apod:${date}` : "space:apod:today";
+  const key = apodCacheKey(date);
   const cached = await cacheGet(key);
-  if (cached) return { ...cached, cached: true };
+  // Never serve stale Cache API entries that still contain the NASA meatball logo
+  if (cached?.apod && !apodPayloadHasLogo(cached.apod)) {
+    const clean = sanitizeApodFields(cached.apod);
+    if (clean) return { ...cached, apod: clean, cached: true };
+  }
 
   let apod = null;
   try {
@@ -98,19 +151,37 @@ export async function getApod(env = {}, date) {
     };
   }
 
+  const clean = sanitizeApodFields(apod);
+  if (!clean) {
+    return {
+      ok: false,
+      missing: true,
+      needs_api_key: false,
+      has_nasa_key: hasNasaApiKey(env),
+      date: apod?.date || date || null,
+      message:
+        "NASA APOD API returned logo placeholder media and HTML fallback did not yield a usable image.",
+      apod: null,
+      source: "NASA APOD",
+      updated_at: new Date().toISOString(),
+      cached: false,
+    };
+  }
+
   const resp = {
-    ok: Boolean(apod),
-    missing: !apod,
+    ok: true,
+    missing: false,
     needs_api_key: false,
     has_nasa_key: hasNasaApiKey(env),
-    date: apod?.date || date || null,
-    message: apod ? null : "APOD unavailable.",
-    apod,
-    source: "NASA APOD",
+    date: clean.date || date || null,
+    message: null,
+    apod: clean,
+    source: clean.source || "NASA APOD",
     updated_at: new Date().toISOString(),
     cached: false,
   };
-  if (apod) await cacheSet(key, resp, 600);
+  // Short TTL — API has been serving broken payloads; don't pin logos for long
+  await cacheSet(key, resp, 180);
   return resp;
 }
 
@@ -196,8 +267,13 @@ export async function getSpace(env = {}, { date } = {}) {
     };
   }
 
-  const cached = await cacheGet("space:bundle");
-  if (cached) return { ...cached, cached: true };
+  const cached = await cacheGet(BUNDLE_CACHE_KEY);
+  if (cached && !apodPayloadHasLogo(cached.apod)) {
+    const clean = sanitizeApodFields(cached.apod);
+    if (clean || !cached.apod) {
+      return { ...cached, apod: clean || cached.apod || null, cached: true };
+    }
+  }
 
   const [issResult, launchesResult, apodResult, archiveResult, planetsResult, neosResult] =
     await Promise.allSettled([
@@ -217,7 +293,7 @@ export async function getSpace(env = {}, { date } = {}) {
   if (launches.length) sources.push("The Space Devs");
 
   const apodPayload = apodResult.status === "fulfilled" ? apodResult.value : null;
-  const apod = apodPayload?.apod || null;
+  const apod = sanitizeApodFields(apodPayload?.apod) || null;
   const apodMeta = apodPayload
     ? {
         ok: apodPayload.ok,
@@ -228,7 +304,7 @@ export async function getSpace(env = {}, { date } = {}) {
         message: apodPayload.message,
       }
     : null;
-  if (apod) sources.push("NASA APOD");
+  if (apod) sources.push(apod.source || "NASA APOD");
 
   const archive = archiveResult.status === "fulfilled" ? archiveResult.value : [];
   const planets = planetsResult.status === "fulfilled" ? planetsResult.value : null;
@@ -254,6 +330,6 @@ export async function getSpace(env = {}, { date } = {}) {
     neos,
     extras: { apod_archive: archive },
   };
-  await cacheSet("space:bundle", resp, 120);
+  await cacheSet(BUNDLE_CACHE_KEY, resp, 90);
   return resp;
 }

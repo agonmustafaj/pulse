@@ -1,18 +1,22 @@
-import { getEvents } from "./events.js";
-import { getNews } from "./news.js";
-import { getMarkets } from "./markets.js";
-import { searchCities } from "./weather.js";
+import { getSpace, getApod, isValidApodDate } from "./space.js";
 
-const MARKET_HINTS = [
-  ["sp500", "^GSPC", "S&P 500"],
-  ["s&p", "^GSPC", "S&P 500"],
-  ["nasdaq", "^IXIC", "Nasdaq"],
-  ["bitcoin", "BTC", "Bitcoin"],
-  ["btc", "BTC", "Bitcoin"],
-  ["ethereum", "ETH", "Ethereum"],
-  ["aapl", "AAPL", "Apple"],
-  ["nvda", "NVDA", "NVIDIA"],
+const SPACE_HINTS = [
+  ["apod", "/", "Astronomy Picture of the Day", "Explore"],
+  ["astronomy", "/", "Astronomy Picture of the Day", "Explore"],
+  ["cosmos", "/", "Explore the cosmos", "Explore"],
+  ["orbit", "/space", "Orbit", "Orbit"],
+  ["planet", "/space?focus=planets", "Planets in orbit", "Orbit"],
+  ["mars", "/space?focus=planets", "Mars & solar system", "Orbit"],
+  ["jupiter", "/space?focus=planets", "Jupiter & solar system", "Orbit"],
+  ["iss", "/space?focus=iss", "International Space Station", "Orbit"],
+  ["station", "/space?focus=iss", "International Space Station", "Orbit"],
+  ["launch", "/space?focus=launches", "Upcoming launches", "Orbit"],
+  ["rocket", "/space?focus=launches", "Upcoming launches", "Orbit"],
+  ["neo", "/space?focus=neos", "Near-Earth objects", "Orbit"],
+  ["asteroid", "/space?focus=neos", "Near-Earth objects", "Orbit"],
 ];
+
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 export async function search(env, q) {
   const query = (q || "").trim();
@@ -30,84 +34,82 @@ export async function search(env, q) {
   const ql = query.toLowerCase();
   const results = [];
 
-  try {
-    const cities = await searchCities(query);
-    for (const c of cities.slice(0, 5)) {
-      const label = `${c.name}, ${c.admin1 || ""} ${c.country || ""}`.replace(/\s+/g, " ").trim();
+  for (const [hint, route, title, category] of SPACE_HINTS) {
+    if (ql.includes(hint)) {
       results.push({
-        id: `city-${c.id}`,
-        title: c.name,
-        subtitle: label,
-        category: "city",
-        route: `/weather?city=${c.name}`,
-        meta: { latitude: c.latitude, longitude: c.longitude },
-      });
-    }
-  } catch {
-    /* optional */
-  }
-
-  try {
-    const events = await getEvents({ limit: 200 });
-    let eventCount = 0;
-    for (const e of events.items) {
-      const hay = `${e.title} ${e.location_name || ""} ${e.category}`.toLowerCase();
-      if (hay.includes(ql)) {
-        results.push({
-          id: e.id,
-          title: e.title,
-          subtitle: e.location_name || e.source,
-          category: "event",
-          route: `/signals?id=${e.id}`,
-          meta: { lat: e.latitude, lon: e.longitude },
-        });
-        eventCount += 1;
-        if (eventCount >= 8) break;
-      }
-    }
-  } catch {
-    /* optional */
-  }
-
-  try {
-    const news = await getNews(env, { query, limit: 8 });
-    for (const a of news.items) {
-      results.push({
-        id: a.id,
-        title: a.headline,
-        subtitle: a.source,
-        category: "news",
-        route: `/news?id=${a.id}`,
-        meta: { url: a.url },
-      });
-    }
-  } catch {
-    /* optional */
-  }
-
-  for (const [hint, symbol, name] of MARKET_HINTS) {
-    if (ql.includes(hint) || ql.includes(symbol.toLowerCase())) {
-      results.push({
-        id: `mkt-${symbol}`,
-        title: name,
-        subtitle: symbol,
-        category: "market",
-        route: `/markets?symbol=${symbol}`,
+        id: `hint-${hint}`,
+        title,
+        subtitle: category,
+        category: "space",
+        route,
         meta: {},
       });
     }
   }
 
-  try {
-    const markets = await getMarkets();
-    for (const m of markets.items || []) {
-      if (m.name.toLowerCase().includes(ql) || m.symbol.toLowerCase().includes(ql)) {
+  if (DATE_RE.test(query) && isValidApodDate(query)) {
+    results.push({
+      id: `apod-${query}`,
+      title: `APOD ${query}`,
+      subtitle: "Astronomy Picture of the Day",
+      category: "apod",
+      route: `/?date=${query}`,
+      meta: { date: query },
+    });
+    try {
+      const apod = await getApod(env, query);
+      if (apod?.apod?.title) {
         results.push({
-          id: `mkt-${m.symbol}`,
-          title: m.name,
-          subtitle: m.symbol,
-          category: "market",
-          route: `/markets?symbol=${m.symbol}`,
+          id: `apod-title-${query}`,
+          title: apod.apod.title,
+          subtitle: `APOD · ${query}`,
+          category: "apod",
+          route: `/?date=${query}`,
+          meta: { date: query },
+        });
+      }
+    } catch {
+      /* optional */
+    }
+  }
+
+  try {
+    const space = await getSpace(env);
+    const launchQ = ql;
+    for (const launch of space.launches || []) {
+      const hay = `${launch.name || ""} ${launch.provider || ""}`.toLowerCase();
+      if (hay.includes(launchQ)) {
+        results.push({
+          id: `launch-${launch.id || launch.name}`,
+          title: launch.name,
+          subtitle: launch.provider || "Launch",
+          category: "launch",
+          route: "/space?focus=launches",
+          meta: {},
+        });
+      }
+    }
+    for (const neo of space.neos || []) {
+      const hay = String(neo.name || "").toLowerCase();
+      if (hay.includes(launchQ)) {
+        results.push({
+          id: `neo-${neo.id || neo.name}`,
+          title: neo.name,
+          subtitle: "Near-Earth object",
+          category: "neo",
+          route: "/space?focus=neos",
+          meta: {},
+        });
+      }
+    }
+    for (const p of space.planets?.planets || []) {
+      if (String(p.name || "").toLowerCase().includes(ql) || String(p.id || "").toLowerCase().includes(ql)) {
+        results.push({
+          id: `planet-${p.id}`,
+          title: p.name,
+          subtitle: `${Number(p.r_au).toFixed(2)} AU`,
+          category: "planet",
+          route: "/space?focus=planets",
           meta: {},
         });
       }
@@ -116,18 +118,16 @@ export async function search(env, q) {
     /* optional */
   }
 
-  for (const [path, title, cat] of [
-    ["/map", "Global Map", "section"],
-    ["/signals", "Live Signals", "section"],
-    ["/space", "Space Explorer", "section"],
-    ["/analytics", "Analytics", "section"],
+  for (const [path, title] of [
+    ["/", "Explore"],
+    ["/space", "Orbit"],
   ]) {
-    if (ql.includes(title.toLowerCase()) || ql.includes(path.replace("/", ""))) {
+    if (ql.includes(title.toLowerCase()) || (path !== "/" && ql.includes(path.replace("/", "")))) {
       results.push({
-        id: `sec-${path}`,
+        id: `sec-${path || "home"}`,
         title,
         subtitle: "Go to section",
-        category: cat,
+        category: "section",
         route: path,
         meta: {},
       });
@@ -144,7 +144,7 @@ export async function search(env, q) {
 
   return {
     ok: true,
-    source: ["events", "news", "weather", "markets"],
+    source: ["space", "apod"],
     updated_at: new Date().toISOString(),
     items: unique.slice(0, 30),
     query,

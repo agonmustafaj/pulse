@@ -18,7 +18,10 @@ let solar;
 let loaded;
 let currentApodDate = todayUTC();
 
-export async function renderOverview(root) {
+export async function renderOverview(root, params = {}) {
+  if (params.date) {
+    currentApodDate = clampApodDate(params.date);
+  }
   if (!loaded) {
     root.innerHTML = `
       <div class="galaxy-home">
@@ -78,7 +81,6 @@ export async function renderOverview(root) {
               <div class="signal-body loading">Loading…</div>
             </article>
           </div>
-          <p class="home-note muted">Earth intel (quakes, markets, weather) lives under Map &amp; Signals — demoted from this home.</p>
         </section>
       </div>
     `;
