@@ -1,14 +1,18 @@
-/** Space-first navigation. Earth intel modules demoted after Orbit. */
+/** Astronomy-only navigation — Explore + Orbit. */
 const ROUTES = [
   { path: "/", view: "overview", label: "Explore" },
   { path: "/space", view: "space", label: "Orbit" },
-  { path: "/map", view: "map", label: "Earth" },
-  { path: "/signals", view: "signals", label: "Signals" },
-  { path: "/news", view: "news", label: "News" },
-  { path: "/weather", view: "weather", label: "Weather" },
-  { path: "/markets", view: "markets", label: "Markets" },
-  { path: "/analytics", view: "analytics", label: "Analytics" },
 ];
+
+/** Old intel paths redirect into the space product. */
+const LEGACY_REDIRECTS = {
+  "/map": "/space?focus=iss",
+  "/signals": "/",
+  "/news": "/",
+  "/weather": "/",
+  "/markets": "/",
+  "/analytics": "/",
+};
 
 export function getRoutes() {
   return ROUTES;
@@ -17,6 +21,18 @@ export function getRoutes() {
 export function parseLocation() {
   const path = window.location.pathname.replace(/\/$/, "") || "/";
   const params = Object.fromEntries(new URLSearchParams(window.location.search));
+  if (LEGACY_REDIRECTS[path]) {
+    const target = LEGACY_REDIRECTS[path];
+    const [p, q] = target.split("?");
+    history.replaceState({}, "", target);
+    const match = ROUTES.find((r) => r.path === p) || ROUTES[0];
+    const merged = {
+      ...match,
+      params: q ? Object.fromEntries(new URLSearchParams(q)) : params,
+      path: match.path,
+    };
+    return merged;
+  }
   const match = ROUTES.find((r) => r.path === path) || ROUTES[0];
   return { ...match, params, path: match.path };
 }

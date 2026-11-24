@@ -53,7 +53,7 @@ export function initSearch() {
     if (!results.length) {
       list.innerHTML = `
         <div class="empty">
-          ${input.value ? "No results" : "Try Tokyo, earthquake, bitcoin, NASA…"}
+          ${input.value ? "No results" : "Try APOD, Mars, ISS, launch…"}
           ${
             recent.length
               ? `<div style="margin-top:12px" class="chip-row">${recent

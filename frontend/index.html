@@ -18,7 +18,6 @@
     <script src="/config.js"></script>
     <script src="https://unpkg.com/lucide@0.460.0"></script>
     <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
     <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
   </head>
   <body>
@@ -45,13 +44,7 @@
 
       <main class="main">
         <section class="view view-overview" id="view-overview" data-view="overview"></section>
-        <section class="view view-map" id="view-map" data-view="map"></section>
-        <section class="view" id="view-signals" data-view="signals"></section>
-        <section class="view" id="view-news" data-view="news"></section>
-        <section class="view" id="view-weather" data-view="weather"></section>
-        <section class="view" id="view-markets" data-view="markets"></section>
         <section class="view view-space" id="view-space" data-view="space"></section>
-        <section class="view" id="view-analytics" data-view="analytics"></section>
       </main>
     </div>
 
@@ -59,7 +52,7 @@
       <div class="search-modal">
         <div class="field">
           <i data-lucide="search" width="16" height="16"></i>
-          <input id="search-input" type="search" placeholder="Search space, cities, events, news…" autocomplete="off" />
+          <input id="search-input" type="search" placeholder="Search APOD, planets, launches, ISS…" autocomplete="off" />
           <kbd class="mono muted">ESC</kbd>
         </div>
         <div class="search-results" id="search-results"></div>

@@ -26,8 +26,7 @@ Leave **`PULSE_API_BASE` empty** (or unset) so the SPA calls same-origin `/api/.
 
 | Variable | Purpose |
 |----------|---------|
-| `NASA_API_KEY` | **Required for reliable APOD / NeoWs** (DEMO_KEY is heavily rate-limited) |
-| `NEWS_API_KEY` | Optional NewsAPI enrichment (RSS works without it) |
+| `NASA_API_KEY` | **Required for reliable APOD / NeoWs** (DEMO_KEY is heavily rate-limited). Also binds on **Preview**. |
 
 After merge to `main`, Pages rebuilds automatically.
 
@@ -52,7 +51,7 @@ After merge to `main`, Pages rebuilds automatically.
 |-------|------|
 | Production API | Cloudflare Pages Functions (`functions/api/`) |
 | Local API | Python 3.12+, FastAPI, Pydantic, httpx, in-memory TTL cache |
-| Frontend | HTML/CSS/ES modules, MapLibre (ISS/Earth), GSAP, Chart.js, Lucide |
+| Frontend | HTML/CSS/ES modules, MapLibre (ISS tracker), GSAP, Lucide |
 | Ephemeris | JPL SSD planetary mean elements (server + canvas viz) |
 | Pages build | `npm run build` → `dist/` |
 
@@ -91,10 +90,14 @@ PYTHONPATH=. uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 - `GET /api/space/iss`
 - `GET /api/space/planets` (JPL SSD mean-element positions)
 - `GET /api/space/neos`
-- `GET /api/events` · `/api/news` · `/api/weather` · `/api/markets` · `/api/analytics` · `/api/search`
+- `GET /api/search` (astronomy: APOD dates, planets, launches, NEOs, Explore/Orbit)
 - `WS /ws/live` *(local FastAPI only)*
 
+Legacy intel endpoints (`/api/events`, `/api/news`, `/api/weather`, `/api/markets`, `/api/analytics`) may still exist in the Functions tree but are **not linked** in the product UI.
+
 APOD dates: **1995-06-16** through today. Invalid / empty dates return `{ ok:false, missing:true, message, apod:null }` without crashing the UI.
+
+When the NASA APOD API returns broken logo / “NASA Science” media, the Functions layer scrapes **apod.nasa.gov** HTML and caches under versioned keys (`space:apod:v3:…`) so stale logo entries are never served.
 
 ---
 
@@ -107,17 +110,12 @@ APOD dates: **1995-06-16** through today. Invalid / empty dates return `{ ok:fal
 | ISS | wheretheiss.at (+ Open Notify fallback) |
 | Launches | The Space Devs Launch Library 2 |
 | NEOs | NASA NeoWs |
-| Earthquakes | USGS GeoJSON |
-| Natural events | NASA EONET |
-| Weather | Open-Meteo |
-| Markets | CoinGecko / Frankfurter / Yahoo |
-| News | BBC / Guardian / NASA RSS |
-| Map tiles | OpenFreeMap via MapLibre (ISS / Earth views) |
+| Map tiles | OpenFreeMap via MapLibre (ISS tracker on Orbit) |
 
 ---
 
 ## Modules
 
-**Explore** (galaxy home) · **Orbit** (primary space) · Earth · Signals · News · Weather · Markets · Analytics · **Ctrl/Cmd+K** search
+**Explore** (APOD home + date search) · **Orbit** (planets / ISS / APOD / launches / NEOs) · **Ctrl/Cmd+K** space search
 
-Earthquakes, markets, and general news remain available but are **demoted** off the home experience.
+Astronomy only — Signals, News, Weather, Markets, Analytics, and the old Earth intel dump are removed from nav/routes (legacy URLs redirect to Explore or Orbit).
