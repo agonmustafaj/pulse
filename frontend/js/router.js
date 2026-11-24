@@ -1,11 +1,12 @@
+/** Space-first navigation. Earth intel modules demoted after Orbit. */
 const ROUTES = [
-  { path: "/", view: "overview", label: "Overview" },
-  { path: "/map", view: "map", label: "Map" },
+  { path: "/", view: "overview", label: "Explore" },
+  { path: "/space", view: "space", label: "Orbit" },
+  { path: "/map", view: "map", label: "Earth" },
   { path: "/signals", view: "signals", label: "Signals" },
   { path: "/news", view: "news", label: "News" },
   { path: "/weather", view: "weather", label: "Weather" },
   { path: "/markets", view: "markets", label: "Markets" },
-  { path: "/space", view: "space", label: "Space" },
   { path: "/analytics", view: "analytics", label: "Analytics" },
 ];
 
@@ -30,7 +31,7 @@ export function navigate(path, { replace = false } = {}) {
 export function buildNav(container, current) {
   container.innerHTML = ROUTES.map(
     (r) =>
-      `<button class="nav-link${r.view === current ? " active" : ""}" data-path="${r.path}">${r.label}</button>`
+      `<button class="nav-link${r.view === current ? " active" : ""}${r.view === "space" ? " nav-priority" : ""}" data-path="${r.path}">${r.label}</button>`
   ).join("");
   container.querySelectorAll(".nav-link").forEach((btn) => {
     btn.addEventListener("click", () => navigate(btn.dataset.path));

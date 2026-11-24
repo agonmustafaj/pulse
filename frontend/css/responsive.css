@@ -9,11 +9,13 @@
 
   .split-view,
   .grid-2,
-  .grid-analytics {
+  .grid-analytics,
+  .space-iss-grid {
     grid-template-columns: 1fr;
   }
 
-  .grid-3 {
+  .grid-3,
+  .home-signal-grid {
     grid-template-columns: 1fr 1fr;
   }
 }
@@ -54,7 +56,7 @@
     padding: 8px;
     gap: 8px;
     overflow: auto;
-    background: linear-gradient(180deg, transparent, rgba(7, 9, 13, 0.92) 18%);
+    background: linear-gradient(180deg, transparent, rgba(3, 5, 10, 0.92) 18%);
   }
 
   .overlay-top,
@@ -83,12 +85,69 @@
     bottom: calc(48% + 8px);
   }
 
-  .grid-3 {
+  .grid-3,
+  .home-signal-grid {
     grid-template-columns: 1fr;
   }
 
   .view {
     padding: 8px;
+  }
+
+  .galaxy-hero {
+    min-height: min(100vh - var(--nav-h), 640px);
+    align-items: flex-end;
+  }
+
+  .galaxy-hero-content {
+    padding: 20px 16px 28px;
+    max-width: 100%;
+  }
+
+  .brand-hero {
+    letter-spacing: 0.14em;
+  }
+
+  .galaxy-cta .btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .apod-date-bar {
+    width: 100%;
+  }
+
+  .apod-date-input {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .orbit-section,
+  .home-signals {
+    padding: 20px 16px 28px;
+  }
+
+  .orbit-section-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .orbit-stage {
+    height: min(42vh, 360px);
+  }
+
+  .space-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .apod-explorer-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .page-head h2 {
+    font-size: 24px;
   }
 }
 
@@ -99,6 +158,26 @@
   }
 
   .brand-name {
-    letter-spacing: 0.12em;
+    letter-spacing: 0.14em;
+  }
+
+  .brand-hero {
+    font-size: clamp(40px, 14vw, 64px);
+  }
+
+  .galaxy-headline {
+    font-size: 18px;
+  }
+
+  .galaxy-lede {
+    font-size: 14px;
+  }
+
+  .galaxy-cta {
+    flex-direction: column;
+  }
+
+  .apod-date-label {
+    width: 100%;
   }
 }

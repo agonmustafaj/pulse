@@ -25,7 +25,7 @@ export async function fetchRssNews(limitPerFeed = 12) {
   await Promise.all(
     FEEDS.map(async (feed) => {
       try {
-        const xml = await fetchText(feed.url);
+        const { text: xml } = await fetchText(feed.url);
         const entries = parseFeed(xml).slice(0, limitPerFeed);
         for (const entry of entries) {
           articles.push({

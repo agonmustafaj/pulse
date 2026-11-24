@@ -3,7 +3,9 @@ import { getSpace } from "./_lib/services/space.js";
 
 export async function onRequestGet(context) {
   try {
-    const data = await getSpace(context.env || {});
+    const url = new URL(context.request.url);
+    const date = url.searchParams.get("date") || undefined;
+    const data = await getSpace(context.env || {}, { date });
     return json(data);
   } catch (exc) {
     return json({

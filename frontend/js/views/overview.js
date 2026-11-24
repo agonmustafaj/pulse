@@ -1,168 +1,259 @@
 import { apiGet } from "../api.js";
-import { createMap, eventsToGeoJSON, upsertEventLayers, upsertIssMarker } from "../map.js";
-import { fmtNum, panel, relativeTime, sourceLabel, severityBadge, refreshIcons } from "../ui.js";
+import {
+  apodDateControls,
+  bindApodDateControls,
+  fetchApodByDate,
+  renderApodEmpty,
+  renderApodHeroMedia,
+  todayUTC,
+  clampApodDate,
+} from "../apod.js";
+import { createSolarSystem } from "../solar-system.js";
+import { createStarfield } from "../starfield.js";
+import { navigate } from "../router.js";
+import { animateIn, fmtNum, refreshIcons, relativeTime } from "../ui.js";
 
-let map;
-let issMarker;
+let starfield;
+let solar;
 let loaded;
+let currentApodDate = todayUTC();
 
 export async function renderOverview(root) {
   if (!loaded) {
     root.innerHTML = `
-      <div class="map-stage">
-        <div id="overview-map"></div>
-        <div class="overlay-grid">
-          <div class="overlay-top">
-            <div class="hero-copy panel" style="padding:14px 16px;max-width:420px">
-              <div class="kicker">Global intelligence</div>
-              <h1>THE WORLD. IN MOTION.</h1>
-              <p>Explore live signals shaping the planet — seismic activity, environmental events, markets, weather, and space.</p>
+      <div class="galaxy-home">
+        <canvas class="starfield" id="home-stars" aria-hidden="true"></canvas>
+
+        <section class="galaxy-hero" id="galaxy-hero" aria-label="Astronomy Picture of the Day">
+          <div class="galaxy-hero-visual" id="apod-hero-visual">
+            <div class="apod-hero-placeholder loading">Loading the cosmos…</div>
+          </div>
+          <div class="galaxy-hero-veil"></div>
+          <div class="galaxy-hero-content">
+            <div class="brand-hero" aria-label="PULSE">PULSE</div>
+            <h1 class="galaxy-headline">THE COSMOS. IN MOTION.</h1>
+            <p class="galaxy-lede">NASA skies, planets in orbit, and the ISS — a cinematic window into deep space.</p>
+            <div class="galaxy-cta">
+              <button type="button" class="btn primary" id="cta-orbit">Enter orbit</button>
+              <button type="button" class="btn ghost" id="cta-iss">Track the ISS</button>
             </div>
-            <div class="panel" style="padding:10px 12px;min-width:180px">
-              <div class="panel-title">System</div>
-              <div class="mono" id="ov-health" style="margin-top:6px;font-size:12px">Checking…</div>
+            <div class="apod-date-wrap">
+              ${apodDateControls({ idPrefix: "home-apod", initialDate: currentApodDate })}
             </div>
+            <div class="apod-hero-caption mono muted" id="apod-hero-caption"></div>
           </div>
-          <div class="overlay-left">
-            <div id="ov-signals"></div>
+        </section>
+
+        <section class="orbit-section" aria-label="Solar system">
+          <div class="orbit-section-head">
+            <div>
+              <div class="kicker">Live ephemeris</div>
+              <h2>Planets in orbit</h2>
+              <p class="muted">Heliocentric positions from JPL SSD mean elements — not decorative placeholders.</p>
+            </div>
+            <div class="mono muted" id="planet-epoch">—</div>
           </div>
-          <div class="overlay-right">
-            <div id="ov-news"></div>
-            <div id="ov-space"></div>
+          <div class="orbit-stage">
+            <canvas id="solar-canvas" aria-label="Solar system visualization"></canvas>
+            <div class="orbit-legend" id="orbit-legend"></div>
           </div>
-          <div class="overlay-bottom">
-            <div id="ov-activity"></div>
-            <div id="ov-weather"></div>
-            <div id="ov-markets"></div>
-            <div id="ov-meta"></div>
+          <div class="orbit-attribution mono muted" id="orbit-attr"></div>
+        </section>
+
+        <section class="home-signals" aria-label="Space signals">
+          <div class="home-signal-grid">
+            <article class="signal-block" id="home-iss">
+              <div class="kicker">Station</div>
+              <h3>ISS now</h3>
+              <div class="signal-body loading">Loading…</div>
+            </article>
+            <article class="signal-block" id="home-launch">
+              <div class="kicker">Pad</div>
+              <h3>Next launch</h3>
+              <div class="signal-body loading">Loading…</div>
+            </article>
+            <article class="signal-block" id="home-neo">
+              <div class="kicker">Near-Earth</div>
+              <h3>Closest NEO</h3>
+              <div class="signal-body loading">Loading…</div>
+            </article>
           </div>
-        </div>
+          <p class="home-note muted">Earth intel (quakes, markets, weather) lives under Map &amp; Signals — demoted from this home.</p>
+        </section>
       </div>
     `;
-    map = createMap("overview-map", { zoom: 1.35 });
-    map.on("load", () => refresh());
+
+    starfield = createStarfield(document.getElementById("home-stars"), { density: 1.1 });
+    starfield.start();
+
+    solar = createSolarSystem(document.getElementById("solar-canvas"), {
+      onSelect(p) {
+        highlightPlanet(p.id);
+      },
+    });
+
+    document.getElementById("cta-orbit")?.addEventListener("click", () => navigate("/space"));
+    document.getElementById("cta-iss")?.addEventListener("click", () => navigate("/space?focus=iss"));
+
+    bindApodDateControls(root, {
+      idPrefix: "home-apod",
+      onDate: (date) => loadApod(date),
+    });
+
     loaded = true;
-  } else {
-    map.resize();
-    refresh();
+    if (window.gsap && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      gsap.fromTo(
+        ".galaxy-hero-content > *",
+        { opacity: 0, y: 16 },
+        { opacity: 1, y: 0, stagger: 0.07, duration: 0.55, ease: "power2.out", clearProps: "transform" }
+      );
+      gsap.fromTo(
+        ".orbit-section",
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.5, delay: 0.2, ease: "power2.out", clearProps: "transform" }
+      );
+    }
   }
+
+  await Promise.all([loadApod(currentApodDate), loadSpaceBundle()]);
   refreshIcons();
 }
 
-async function refresh() {
+async function loadApod(date) {
+  currentApodDate = clampApodDate(date);
+  const visual = document.getElementById("apod-hero-visual");
+  const caption = document.getElementById("apod-hero-caption");
+  if (!visual) return;
+  visual.innerHTML = `<div class="apod-hero-placeholder loading">Loading APOD…</div>`;
+  caption.textContent = "";
+
+  const data = await fetchApodByDate(currentApodDate);
+  const input = document.getElementById("home-apod-date-input");
+  if (input) input.value = currentApodDate;
+
+  if (data.needs_api_key || !data.ok || !data.apod) {
+    visual.innerHTML = renderApodEmpty(data.message, data.date || currentApodDate, {
+      needsKey: Boolean(data.needs_api_key),
+    });
+    caption.textContent = data.needs_api_key
+      ? "Add NASA_API_KEY on Cloudflare Pages (Preview + Production)"
+      : data.message || "No image for this date";
+    return;
+  }
+
+  const apod = data.apod;
+  visual.innerHTML = renderApodHeroMedia(apod, { hero: true });
+  if (!visual.querySelector(".apod-media, .apod-video-thumb")) {
+    visual.innerHTML = renderApodEmpty("NASA returned no usable APOD media for this date.", currentApodDate);
+    caption.textContent = "APOD media unavailable";
+    return;
+  }
+  caption.textContent = `${apod.title || "APOD"} · ${apod.date || currentApodDate}${
+    apod.copyright ? ` · © ${apod.copyright}` : ""
+  } · NASA`;
+  animateIn(visual.querySelector(".apod-media, .apod-video, .apod-empty"));
+}
+
+async function loadSpaceBundle() {
   try {
-    const health = await apiGet("/api/health");
-    document.getElementById("ov-health").textContent = health.ok ? "API ONLINE" : "DEGRADED";
-  } catch {
-    document.getElementById("ov-health").textContent = "API OFFLINE";
-  }
+    const data = await apiGet("/api/space");
+    const planets = data.planets;
+    if (planets) {
+      solar.setPlanets(planets);
+      solar.start();
+      document.getElementById("planet-epoch").textContent = planets.epoch
+        ? `Epoch ${new Date(planets.epoch).toISOString().replace("T", " ").slice(0, 19)}Z`
+        : "—";
+      document.getElementById("orbit-attr").textContent = planets.attribution
+        ? `Source: ${planets.attribution}`
+        : "Source: JPL SSD";
+      renderLegend(planets.planets || []);
+    } else {
+      try {
+        const p = await apiGet("/api/space/planets");
+        solar.setPlanets(p);
+        solar.start();
+        document.getElementById("planet-epoch").textContent = p.epoch
+          ? `Epoch ${new Date(p.epoch).toISOString().replace("T", " ").slice(0, 19)}Z`
+          : "—";
+        document.getElementById("orbit-attr").textContent = p.attribution || "JPL SSD";
+        renderLegend(p.planets || []);
+      } catch {
+        solar.setPlanets(null);
+        solar.start();
+        document.getElementById("orbit-attr").textContent = "Planet API unavailable — orbits shown with mean semi-major axes";
+      }
+    }
 
-  const [events, news, weather, markets, space] = await Promise.allSettled([
-    apiGet("/api/events", { limit: 80 }),
-    apiGet("/api/news", { limit: 6 }),
-    apiGet("/api/weather", { city: "London" }),
-    apiGet("/api/markets"),
-    apiGet("/api/space"),
-  ]);
+    const iss = data.iss;
+    const issEl = document.querySelector("#home-iss .signal-body");
+    if (iss && issEl) {
+      issEl.innerHTML = `
+        <div class="signal-stat">${fmtNum(iss.latitude, 2)}°, ${fmtNum(iss.longitude, 2)}°</div>
+        <div class="muted">${iss.altitude_km != null ? fmtNum(iss.altitude_km, 0) + " km · " : ""}${iss.visibility || "—"}</div>
+        <button type="button" class="btn ghost compact" data-nav="/space?focus=iss">Open tracker</button>
+      `;
+    } else if (issEl) {
+      issEl.innerHTML = `<div class="empty">ISS unavailable</div>`;
+    }
 
-  if (events.status === "fulfilled" && events.value.ok) {
-    const items = events.value.items || [];
-    upsertEventLayers(map, eventsToGeoJSON(items));
-    const list = items
-      .slice(0, 6)
-      .map(
-        (e) => `
-        <div class="list-item">
-          <div class="item-meta">${severityBadge(e.severity)} <span>${e.category}</span></div>
-          <div class="item-title">${e.title}</div>
-          <div class="item-meta"><span>${e.location_name || "—"}</span><span>${relativeTime(e.timestamp)}</span></div>
-        </div>`
-      )
-      .join("");
-    document.getElementById("ov-signals").innerHTML = panel({
-      title: "Latest signals",
-      body: list || `<div class="empty">No signals</div>`,
-      source: sourceLabel(events.value.source, events.value.updated_at),
+    const launch = (data.launches || [])[0];
+    const launchEl = document.querySelector("#home-launch .signal-body");
+    if (launch && launchEl) {
+      launchEl.innerHTML = `
+        <div class="signal-stat">${launch.name}</div>
+        <div class="muted">${launch.provider || "—"} · ${launch.net ? relativeTime(launch.net) : "TBD"}</div>
+        <button type="button" class="btn ghost compact" data-nav="/space?focus=launches">All launches</button>
+      `;
+    } else if (launchEl) {
+      launchEl.innerHTML = `<div class="empty">No launch data</div>`;
+    }
+
+    const neo = (data.neos || [])[0];
+    const neoEl = document.querySelector("#home-neo .signal-body");
+    if (neo && neoEl) {
+      neoEl.innerHTML = `
+        <div class="signal-stat">${neo.name}</div>
+        <div class="muted">${neo.miss_distance_km != null ? fmtNum(neo.miss_distance_km / 1e6, 2) + " M km miss" : "—"}${
+          neo.hazardous ? " · PHA" : ""
+        }</div>
+        <button type="button" class="btn ghost compact" data-nav="/space?focus=neos">Browse NEOs</button>
+      `;
+    } else if (neoEl) {
+      neoEl.innerHTML = `<div class="empty">NEO feed unavailable</div>`;
+    }
+
+    document.querySelectorAll("[data-nav]").forEach((btn) => {
+      btn.addEventListener("click", () => navigate(btn.dataset.nav));
     });
-    document.getElementById("ov-activity").innerHTML = panel({
-      title: "Activity",
-      body: `<div class="stat-grid">
-        <div class="stat"><div class="label">Events</div><div class="value">${fmtNum(events.value.total, 0)}</div></div>
-        <div class="stat"><div class="label">Mapped</div><div class="value">${fmtNum(items.filter((e) => e.latitude != null).length, 0)}</div></div>
-      </div>`,
-      source: sourceLabel(events.value.source, events.value.updated_at),
-    });
-  } else {
-    document.getElementById("ov-signals").innerHTML = panel({ title: "Latest signals", body: `<div class="error">Signals unavailable</div>` });
+  } catch (err) {
+    document.querySelector("#home-iss .signal-body").innerHTML = `<div class="error">${err.message}</div>`;
   }
+}
 
-  if (news.status === "fulfilled" && news.value.ok) {
-    const list = (news.value.items || [])
-      .slice(0, 5)
-      .map(
-        (a) => `
-        <div class="list-item">
-          <div class="item-title">${a.headline}</div>
-          <div class="item-meta"><span>${a.source}</span><span>${relativeTime(a.published)}</span></div>
-        </div>`
-      )
-      .join("");
-    document.getElementById("ov-news").innerHTML = panel({
-      title: "News highlights",
-      body: list,
-      source: sourceLabel(news.value.source, news.value.updated_at),
+function renderLegend(planets) {
+  const el = document.getElementById("orbit-legend");
+  if (!el) return;
+  el.innerHTML = planets
+    .map(
+      (p) => `
+      <button type="button" class="orbit-chip" data-planet="${p.id}">
+        <span class="orbit-dot" style="background:${p.color || "#fff"}"></span>
+        ${p.name}
+        <span class="mono muted">${fmtNum(p.r_au, 2)} AU</span>
+      </button>`
+    )
+    .join("");
+  el.querySelectorAll("[data-planet]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      solar.select(btn.dataset.planet);
+      highlightPlanet(btn.dataset.planet);
     });
-  }
+  });
+}
 
-  if (weather.status === "fulfilled" && weather.value.ok && weather.value.current) {
-    const c = weather.value.current;
-    document.getElementById("ov-weather").innerHTML = panel({
-      title: "Weather",
-      body: `<div class="stat"><div class="label">${c.location}</div><div class="value">${fmtNum(c.temperature_c, 1)}°C</div>
-        <div class="muted" style="margin-top:4px">${c.condition || "—"} · Wind ${fmtNum(c.wind_speed_kmh, 0)} km/h</div></div>`,
-      source: sourceLabel(weather.value.source, weather.value.updated_at),
-    });
-  }
-
-  if (markets.status === "fulfilled" && markets.value.ok) {
-    const top = (markets.value.items || []).filter((i) => i.category === "index" || i.category === "crypto").slice(0, 3);
-    const rows = top
-      .map((m) => {
-        const cls = (m.change_percent || 0) >= 0 ? "pos" : "neg";
-        return `<div class="item-meta" style="justify-content:space-between"><span>${m.symbol}</span><span class="mono ${cls}">${fmtNum(m.price)} (${fmtNum(m.change_percent, 2)}%)</span></div>`;
-      })
-      .join("");
-    document.getElementById("ov-markets").innerHTML = panel({
-      title: "Markets",
-      body: rows || `<div class="empty">No quotes</div>`,
-      source: sourceLabel(markets.value.source, markets.value.updated_at),
-    });
-  }
-
-  if (space.status === "fulfilled" && space.value.ok) {
-    const iss = space.value.iss;
-    if (iss) issMarker = upsertIssMarker(map, iss, issMarker);
-    const launch = (space.value.launches || [])[0];
-    document.getElementById("ov-space").innerHTML = panel({
-      title: "Space",
-      body: `
-        <div class="stat-grid">
-          <div class="stat"><div class="label">ISS lat</div><div class="value" style="font-size:14px">${iss ? fmtNum(iss.latitude, 2) : "—"}</div></div>
-          <div class="stat"><div class="label">ISS lon</div><div class="value" style="font-size:14px">${iss ? fmtNum(iss.longitude, 2) : "—"}</div></div>
-        </div>
-        <div class="muted" style="margin-top:8px;font-size:12px">${launch ? `Next: ${launch.name}` : "No launch data"}</div>`,
-      source: sourceLabel(space.value.source, space.value.updated_at),
-    });
-  }
-
-  document.getElementById("ov-meta").innerHTML = panel({
-    title: "Principles",
-    body: `<div class="chip-row">
-      <span class="badge violet">Discover</span>
-      <span class="badge cyan">Connect</span>
-      <span class="badge green">Observe</span>
-      <span class="badge amber">Explore</span>
-    </div>
-    <p class="muted" style="margin:10px 0 0;font-size:12px">Real public data only. Attribution on every panel.</p>`,
+function highlightPlanet(id) {
+  document.querySelectorAll(".orbit-chip").forEach((c) => {
+    c.classList.toggle("active", c.dataset.planet === id);
   });
 }

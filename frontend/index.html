@@ -3,12 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="PULSE — The world. In motion. Global signal intelligence platform." />
-    <title>PULSE — The World. In Motion.</title>
+    <meta name="description" content="PULSE — The cosmos. In motion. Galaxy exploration: NASA APOD, planets in orbit, ISS, launches." />
+    <title>PULSE — The Cosmos. In Motion.</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Sora:wght@400;500;600&family=Syne:wght@600;700;800&display=swap"
       rel="stylesheet"
     />
     <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
@@ -24,13 +24,13 @@
   <body>
     <div id="app">
       <header class="topbar">
-        <div class="brand">
+        <a class="brand" href="/" data-nav="/">
           <div class="brand-mark" aria-hidden="true"></div>
           <div class="brand-text">
             <span class="brand-name">PULSE</span>
-            <span class="brand-live"><span class="live-dot"></span> LIVE SIGNAL</span>
+            <span class="brand-live"><span class="live-dot"></span> DEEP SPACE</span>
           </div>
-        </div>
+        </a>
         <nav class="nav-links" id="nav" aria-label="Primary"></nav>
         <div class="top-actions">
           <div class="clock" id="clock">
@@ -50,7 +50,7 @@
         <section class="view" id="view-news" data-view="news"></section>
         <section class="view" id="view-weather" data-view="weather"></section>
         <section class="view" id="view-markets" data-view="markets"></section>
-        <section class="view" id="view-space" data-view="space"></section>
+        <section class="view view-space" id="view-space" data-view="space"></section>
         <section class="view" id="view-analytics" data-view="analytics"></section>
       </main>
     </div>
@@ -59,7 +59,7 @@
       <div class="search-modal">
         <div class="field">
           <i data-lucide="search" width="16" height="16"></i>
-          <input id="search-input" type="search" placeholder="Search cities, events, news, markets…" autocomplete="off" />
+          <input id="search-input" type="search" placeholder="Search space, cities, events, news…" autocomplete="off" />
           <kbd class="mono muted">ESC</kbd>
         </div>
         <div class="search-results" id="search-results"></div>

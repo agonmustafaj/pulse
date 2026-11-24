@@ -121,7 +121,8 @@ async def search(q: str) -> SearchResponse:
     for path, title, cat in (
         ("/map", "Global Map", "section"),
         ("/signals", "Live Signals", "section"),
-        ("/space", "Space Explorer", "section"),
+        ("/space", "Orbit — space explorer", "section"),
+        ("/", "Explore — galaxy home", "section"),
         ("/analytics", "Analytics", "section"),
     ):
         if ql in title.lower() or ql in path.strip("/"):

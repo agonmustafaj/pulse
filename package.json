@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "PULSE — global signal intelligence platform (Cloudflare Pages frontend + Functions API)",
+  "description": "PULSE — galaxy / space exploration site (Cloudflare Pages frontend + Functions API)",
   "scripts": {
     "build": "node scripts/build.mjs",
     "dev:pages": "npm run build && npx --yes wrangler@4 pages dev dist --port 8788",
