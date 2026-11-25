@@ -18,6 +18,7 @@ import {
   refreshIcons,
   setError,
   animateIn,
+  siteFooter,
 } from "../ui.js";
 
 let map;
@@ -100,6 +101,8 @@ export async function renderSpace(root, params = {}) {
         <p class="muted">Closest approaches in the current feed window.</p>
         <div id="neo-list"><div class="loading">Loading…</div></div>
       </section>
+
+      ${siteFooter()}
     </div>
   `;
 
