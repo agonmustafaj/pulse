@@ -82,7 +82,7 @@ function drawList() {
       <div class="list-item" data-id="${e.id}">
         <div class="item-meta">${severityBadge(e.severity)} <span>${e.category}</span><span>${e.source}</span></div>
         <div class="item-title">${e.title}</div>
-        <div class="item-meta"><span>${e.location_name || "—"}</span><span>${relativeTime(e.timestamp)}</span></div>
+        <div class="item-meta"><span>${e.location_name || "-"}</span><span>${relativeTime(e.timestamp)}</span></div>
       </div>`
         )
         .join("")
@@ -100,9 +100,9 @@ function select(id) {
   detail.innerHTML = `
     <div class="chip-row" style="margin-bottom:8px">${severityBadge(e.severity)} <span class="badge cyan">${e.category}</span></div>
     <h3 style="margin:0 0 8px;font-size:16px">${e.title}</h3>
-    <div class="item-meta"><span>${e.location_name || "—"}</span><span class="mono">${e.timestamp || "—"}</span></div>
+    <div class="item-meta"><span>${e.location_name || "-"}</span><span class="mono">${e.timestamp || "-"}</span></div>
     <p class="muted" style="margin-top:12px">${e.description || ""}</p>
-    <div class="mono muted" style="margin-top:10px">${e.latitude ?? "—"}, ${e.longitude ?? "—"}</div>
+    <div class="mono muted" style="margin-top:10px">${e.latitude ?? "-"}, ${e.longitude ?? "-"}</div>
     <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
       ${e.latitude != null ? `<button class="btn primary" id="sig-map">View on map</button>` : ""}
       ${e.source_url ? `<a class="btn" target="_blank" rel="noopener" href="${e.source_url}">Open source</a>` : ""}

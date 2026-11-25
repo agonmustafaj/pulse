@@ -68,7 +68,7 @@ async def fetch_rss_news(limit_per_feed: int = 12) -> list[NewsArticle]:
                         image_url=image,
                     )
                 )
-        except Exception:  # noqa: BLE001 — skip failed feed
+        except Exception:  # noqa: BLE001: skip failed feed
             continue
     articles.sort(key=lambda a: a.published or datetime.min.replace(tzinfo=timezone.utc), reverse=True)
     return articles

@@ -6,7 +6,7 @@ const LAUNCHES_URL = "https://ll.thespacedevs.com/2.2.0/launch/upcoming/";
 const APOD_URL = "https://api.nasa.gov/planetary/apod";
 const NEO_FEED_URL = "https://api.nasa.gov/neo/rest/v1/feed";
 
-/** JPL SSD planetary mean elements (Keplerian), valid ~1800–2050.
+/** JPL SSD planetary mean elements (Keplerian), valid ~1800-2050.
  *  Source: https://ssd.jpl.nasa.gov/planets/approx_pos.html
  *  a (AU), e, I (deg), L (deg), ϖ (deg), Ω (deg) + rates per century.
  */
@@ -216,7 +216,7 @@ export function isPlaceholderApodUrl(url) {
   );
 }
 
-/** Real APOD images live on apods.nasa.gov / apod.nasa.gov / imgur etc. — never the NASA meatball. */
+/** Real APOD images live on apods.nasa.gov / apod.nasa.gov / imgur etc.; never the NASA meatball. */
 export function isUsableApodMedia(apod) {
   if (!apod || apod.placeholder) return false;
   if (apod.media_type === "video") {
@@ -326,7 +326,7 @@ export async function fetchIss() {
 }
 
 export async function fetchLaunches(limit = 12) {
-  // Prefer lightweight list payload — `mode=detailed` is large and often times out on Pages.
+  // Prefer lightweight list payload; `mode=detailed` is large and often times out on Pages.
   const data = await fetchJson(LAUNCHES_URL, {
     params: { limit, mode: "list" },
     headers: { "User-Agent": "PULSE/1.0 (galaxy; https://pulse-bw6.pages.dev)" },
@@ -475,7 +475,7 @@ export function parseApodHtml(html, { date = null, baseUrl = "https://apod.nasa.
     }
   }
 
-  // Prefer a scored APOD still/image when present — pages often embed incidental YouTube.
+  // Prefer a scored APOD still/image when present; pages often embed incidental YouTube.
   // Only treat the day as video when there is no usable sky image.
   if (youtubeUrl && (!best || bestScore < 20)) {
     const thumb = youtubeThumbnail(youtubeUrl) || best;
@@ -539,13 +539,13 @@ export async function scrapeApodHtml(date) {
 
   try {
     let { text, finalUrl } = await fetchText(startUrl, { timeoutMs: 20000 });
-    // Classic dated URL sometimes lands on the APOD index — resolve the dated article link.
+    // Classic dated URL sometimes lands on the APOD index; resolve the dated article link.
     if (!/\/image-article\/apod-/i.test(finalUrl || "")) {
       const href = findDatedApodArticleHref(text, info);
       if (href) {
         ({ text, finalUrl } = await fetchText(href, { timeoutMs: 20000 }));
       } else if (info.iso === today) {
-        // Index page for today — also try science.nasa.gov/apod/
+        // Index page for today; also try science.nasa.gov/apod/
         const index = await fetchText("https://science.nasa.gov/apod/", { timeoutMs: 20000 });
         const href2 = findDatedApodArticleHref(index.text, info);
         if (href2) ({ text, finalUrl } = await fetchText(href2, { timeoutMs: 20000 }));
@@ -572,7 +572,7 @@ async function fetchApodFromApi(env, date) {
 function mergeApodMeta(primary, fallback) {
   if (!fallback) return primary;
   if (!primary) return fallback;
-  // HTML/scrape media always wins for url/hdurl/display_url — never keep API logo URLs
+  // HTML/scrape media always wins for url/hdurl/display_url; never keep API logo URLs
   const display = fallback.display_url || fallback.hdurl || fallback.url;
   return {
     ...fallback,
@@ -606,11 +606,11 @@ export async function fetchApod(env = {}, date) {
       apiError = err;
       const msg = String(err.message || err);
       if (/HTTP 400|HTTP 404/.test(msg)) {
-        // Still try HTML — some dates exist on the site even when API 404s
+        // Still try HTML; some dates exist on the site even when API 404s
       } else if (/HTTP 403|HTTP 429/.test(msg)) {
         // continue to HTML fallback
       } else {
-        // network blip — still try HTML
+        // network blip; still try HTML
       }
     }
   }
@@ -684,7 +684,7 @@ export async function fetchApod(env = {}, date) {
   };
 }
 
-/** Recent APODs for archive strip — HTML scrape in parallel (avoids broken API logo URLs). */
+/** Recent APODs for archive strip: HTML scrape in parallel (avoids broken API logo URLs). */
 export async function fetchApodRange(env = {}, days = 7) {
   const end = todayUtcDate();
   const count = Math.max(1, Math.min(days, 8));

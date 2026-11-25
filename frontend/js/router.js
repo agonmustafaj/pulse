@@ -1,4 +1,4 @@
-/** Astronomy-only navigation — Explore + Orbit. */
+/** Astronomy-only navigation: Explore + Orbit. */
 const ROUTES = [
   { path: "/", view: "overview", label: "Explore" },
   { path: "/space", view: "space", label: "Orbit" },

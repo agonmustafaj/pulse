@@ -65,7 +65,7 @@ async function load() {
           <td>${m.name}<div class="muted" style="font-size:10px">${m.category}</div></td>
           <td class="mono">${m.symbol}</td>
           <td class="mono">${fmtNum(m.price)}</td>
-          <td class="mono ${cls}">${m.change_percent != null ? fmtNum(m.change_percent, 2) + "%" : "—"}</td>
+          <td class="mono ${cls}">${m.change_percent != null ? fmtNum(m.change_percent, 2) + "%" : "-"}</td>
           <td class="muted" style="font-size:10px">${m.source}</td>
         </tr>`;
       })

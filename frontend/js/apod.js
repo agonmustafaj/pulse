@@ -111,7 +111,7 @@ export function renderApodNeedsKey(message) {
           "Astronomy Picture of the Day needs a real NASA API key on this Cloudflare Pages environment (Production and Preview)."
       )}</p>
       <p class="mono muted" style="margin-top:10px">Pages → Settings → Environment variables → NASA_API_KEY</p>
-      <p class="muted" style="margin-top:8px;font-size:12px">Free key: <a href="https://api.nasa.gov/" target="_blank" rel="noopener">api.nasa.gov</a>. DEMO_KEY only returns a site logo — PULSE will not show it.</p>
+      <p class="muted" style="margin-top:8px;font-size:12px">Free key: <a href="https://api.nasa.gov/" target="_blank" rel="noopener">api.nasa.gov</a>. DEMO_KEY only returns a site logo. PULSE will not show it.</p>
     </div>`;
 }
 
@@ -189,7 +189,7 @@ export function archiveStrip(items = []) {
           if (!src || a.media_type === "video") {
             return `<button type="button" class="apod-thumb muted" data-date="${a?.date || ""}" ${src ? "" : "disabled"}>
               ${src ? `<img src="${src}" alt="" loading="lazy" />` : ""}
-              <span class="mono">${a?.date?.slice(5) || "—"}</span>
+              <span class="mono">${a?.date?.slice(5) || "-"}</span>
             </button>`;
           }
           return `

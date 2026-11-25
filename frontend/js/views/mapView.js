@@ -123,7 +123,7 @@ function showFeature(props, coords) {
     title: props.title || "Event",
     body: `
       <div class="chip-row" style="margin-bottom:8px">${severityBadge(props.severity)} <span class="badge">${props.category}</span></div>
-      <div class="item-meta"><span>${event?.location_name || "—"}</span><span>${relativeTime(event?.timestamp)}</span></div>
+      <div class="item-meta"><span>${event?.location_name || "-"}</span><span>${relativeTime(event?.timestamp)}</span></div>
       <p class="muted" style="margin-top:10px">${event?.description || ""}</p>
       <div class="mono muted" style="margin-top:10px">${fmtNum(coords[1], 4)}, ${fmtNum(coords[0], 4)}</div>
       <div style="margin-top:12px;display:flex;gap:8px">
@@ -131,7 +131,7 @@ function showFeature(props, coords) {
         ${event?.source_url ? `<a class="btn" href="${event.source_url}" target="_blank" rel="noopener">Source</a>` : ""}
       </div>
     `,
-    source: `Source: ${props.source || "—"}`,
+    source: `Source: ${props.source || "-"}`,
   });
   setTimeout(() => {
     const btn = document.getElementById("drawer-signals");

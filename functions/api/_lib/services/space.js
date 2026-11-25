@@ -12,7 +12,7 @@ import {
 } from "../providers/space.js";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-/** Bump when APOD response shape / fallback logic changes — invalidates Cache API entries. */
+/** Bump when APOD response shape / fallback logic changes; invalidates Cache API entries. */
 const APOD_CACHE_VER = "v3";
 const BUNDLE_CACHE_KEY = "space:bundle:v3";
 
@@ -24,7 +24,7 @@ function apodCacheKey(date) {
 export function apodPayloadHasLogo(apod) {
   if (!apod) return false;
   if (apod.title === "NASA Science") return true;
-  // Only inspect present URL fields — null hdurl is normal for video APODs
+  // Only inspect present URL fields; null hdurl is normal for video APODs
   const fields = [apod.url, apod.hdurl, apod.display_url, apod.thumbnail_url].filter(
     (u) => u != null && String(u).trim() !== ""
   );
@@ -33,7 +33,7 @@ export function apodPayloadHasLogo(apod) {
   return fields.every((u) => isPlaceholderApodUrl(u));
 }
 
-/** Ensure url/hdurl/display_url are real sky media — never leave logo URLs in the response. */
+/** Ensure url/hdurl/display_url are real sky media; never leave logo URLs in the response. */
 export function sanitizeApodFields(apod) {
   if (!apod || typeof apod !== "object") return null;
   if (!isUsableApodMedia(apod) || apodPayloadHasLogo(apod)) return null;
@@ -180,7 +180,7 @@ export async function getApod(env = {}, date) {
     updated_at: new Date().toISOString(),
     cached: false,
   };
-  // Short TTL — API has been serving broken payloads; don't pin logos for long
+  // Short TTL: API has been serving broken payloads; don't pin logos for long
   await cacheSet(key, resp, 180);
   return resp;
 }

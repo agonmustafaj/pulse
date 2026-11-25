@@ -1,4 +1,4 @@
-# PULSE — The Cosmos. In Motion.
+# PULSE: The Cosmos. In Motion.
 
 Cinematic **galaxy / space exploration** site: NASA Astronomy Picture of the Day, planets in orbit, ISS tracking, launches, and near-Earth objects.
 
@@ -10,11 +10,11 @@ Cinematic **galaxy / space exploration** site: NASA Astronomy Picture of the Day
 
 ## Deploy model (Orbit-style)
 
-**Production is Cloudflare Pages only** — Git connect, build static assets, serve `/api/*` via **Pages Functions**. No separate Render/Railway/Fly API host is required.
+**Production is Cloudflare Pages only.** Git connect, build static assets, serve `/api/*` via **Pages Functions**. No separate Render/Railway/Fly API host is required.
 
 | Setting | Value |
 |---------|--------|
-| Root directory | *(empty — repo root)* |
+| Root directory | *(empty: repo root)* |
 | Build command | `npm run build` |
 | Build output directory | `dist` |
 | Functions | `functions/` at repo root (not inside `dist`) |
@@ -35,7 +35,7 @@ After merge to `main`, Pages rebuilds automatically.
 ## How to review a PR preview
 
 1. Open the Cloudflare Pages **Preview** URL for the PR branch (Pages → Deployments → this branch), or the GitHub PR “Visit Preview” / deployment check link.
-2. Confirm **Explore** home: full-bleed APOD hero, **PULSE** brand, planets section — not a multi-panel intel dashboard.
+2. Confirm **Explore** home: full-bleed APOD hero, **PULSE** brand, planets section, not a multi-panel intel dashboard.
 3. Use the **APOD date** control: pick a past date → image/title updates; try an edge date or clear failure path → graceful empty state.
 4. Open **Orbit**: planets · ISS map · APOD · launches · NEOs.
 5. Hit `/api/health` → `{"ok":true,"runtime":"cloudflare-pages",...}`
@@ -118,4 +118,4 @@ When the NASA APOD API returns broken logo / “NASA Science” media, the Funct
 
 **Explore** (APOD home + date search) · **Orbit** (planets / ISS / APOD / launches / NEOs) · **Ctrl/Cmd+K** space search
 
-Astronomy only — Signals, News, Weather, Markets, Analytics, and the old Earth intel dump are removed from nav/routes (legacy URLs redirect to Explore or Orbit).
+Astronomy only: Signals, News, Weather, Markets, Analytics, and the old Earth intel dump are removed from nav/routes (legacy URLs redirect to Explore or Orbit).
