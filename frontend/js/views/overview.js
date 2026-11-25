@@ -3,15 +3,14 @@ import {
   apodDateControls,
   bindApodDateControls,
   fetchApodByDate,
-  renderApodEmpty,
-  renderApodHeroMedia,
+  renderApodCard,
   todayUTC,
   clampApodDate,
 } from "../apod.js";
 import { createSolarSystem } from "../solar-system.js";
 import { createStarfield } from "../starfield.js";
 import { navigate } from "../router.js";
-import { animateIn, fmtNum, refreshIcons, relativeTime } from "../ui.js";
+import { animateIn, fmtNum, refreshIcons, relativeTime, siteFooter } from "../ui.js";
 
 let starfield;
 let solar;
@@ -27,9 +26,16 @@ export async function renderOverview(root, params = {}) {
       <div class="galaxy-home">
         <canvas class="starfield" id="home-stars" aria-hidden="true"></canvas>
 
-        <section class="galaxy-hero" id="galaxy-hero" aria-label="Astronomy Picture of the Day">
-          <div class="galaxy-hero-visual" id="apod-hero-visual">
-            <div class="apod-hero-placeholder loading">Loading the cosmos…</div>
+        <section class="galaxy-hero" id="galaxy-hero" aria-label="PULSE hero">
+          <div class="galaxy-hero-visual" aria-hidden="true">
+            <img
+              class="hero-media"
+              src="/assets/hero-cosmos.svg"
+              alt=""
+              width="1600"
+              height="900"
+              decoding="async"
+            />
           </div>
           <div class="galaxy-hero-veil"></div>
           <div class="galaxy-hero-content">
@@ -40,10 +46,22 @@ export async function renderOverview(root, params = {}) {
               <button type="button" class="btn primary" id="cta-orbit">Enter orbit</button>
               <button type="button" class="btn ghost" id="cta-iss">Track the ISS</button>
             </div>
-            <div class="apod-date-wrap">
-              ${apodDateControls({ idPrefix: "home-apod", initialDate: currentApodDate })}
+          </div>
+        </section>
+
+        <section class="apod-section" id="apod-section" aria-label="Astronomy Picture of the Day">
+          <div class="apod-section-head">
+            <div>
+              <div class="kicker">NASA APOD</div>
+              <h2>Astronomy Picture of the Day</h2>
+              <p class="muted">Browse any day since June 16, 1995 — real NASA imagery, title, and explanation.</p>
             </div>
-            <div class="apod-hero-caption mono muted" id="apod-hero-caption"></div>
+          </div>
+          <div class="apod-section-controls">
+            ${apodDateControls({ idPrefix: "home-apod", initialDate: currentApodDate })}
+          </div>
+          <div id="apod-section-body" class="apod-section-body">
+            <div class="loading">Loading APOD…</div>
           </div>
         </section>
 
@@ -82,6 +100,8 @@ export async function renderOverview(root, params = {}) {
             </article>
           </div>
         </section>
+
+        ${siteFooter()}
       </div>
     `;
 
@@ -110,9 +130,14 @@ export async function renderOverview(root, params = {}) {
         { opacity: 1, y: 0, stagger: 0.07, duration: 0.55, ease: "power2.out", clearProps: "transform" }
       );
       gsap.fromTo(
+        ".apod-section",
+        { opacity: 0, y: 18 },
+        { opacity: 1, y: 0, duration: 0.5, delay: 0.12, ease: "power2.out", clearProps: "transform" }
+      );
+      gsap.fromTo(
         ".orbit-section",
         { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.5, delay: 0.2, ease: "power2.out", clearProps: "transform" }
+        { opacity: 1, y: 0, duration: 0.5, delay: 0.22, ease: "power2.out", clearProps: "transform" }
       );
     }
   }
@@ -123,37 +148,30 @@ export async function renderOverview(root, params = {}) {
 
 async function loadApod(date) {
   currentApodDate = clampApodDate(date);
-  const visual = document.getElementById("apod-hero-visual");
-  const caption = document.getElementById("apod-hero-caption");
-  if (!visual) return;
-  visual.innerHTML = `<div class="apod-hero-placeholder loading">Loading APOD…</div>`;
-  caption.textContent = "";
+  const body = document.getElementById("apod-section-body");
+  if (!body) return;
+  body.innerHTML = `<div class="loading">Loading APOD…</div>`;
+
+  const url = new URL(window.location.href);
+  if (currentApodDate === todayUTC()) url.searchParams.delete("date");
+  else url.searchParams.set("date", currentApodDate);
+  history.replaceState({}, "", `${url.pathname}${url.search}`);
 
   const data = await fetchApodByDate(currentApodDate);
   const input = document.getElementById("home-apod-date-input");
   if (input) input.value = currentApodDate;
 
   if (data.needs_api_key || !data.ok || !data.apod) {
-    visual.innerHTML = renderApodEmpty(data.message, data.date || currentApodDate, {
+    body.innerHTML = renderApodCard(null, {
       needsKey: Boolean(data.needs_api_key),
+      message: data.message,
     });
-    caption.textContent = data.needs_api_key
-      ? "Add NASA_API_KEY on Cloudflare Pages (Preview + Production)"
-      : data.message || "No image for this date";
+    animateIn(body.querySelector(".apod-empty, .apod-card"));
     return;
   }
 
-  const apod = data.apod;
-  visual.innerHTML = renderApodHeroMedia(apod, { hero: true });
-  if (!visual.querySelector(".apod-media, .apod-video-thumb")) {
-    visual.innerHTML = renderApodEmpty("NASA returned no usable APOD media for this date.", currentApodDate);
-    caption.textContent = "APOD media unavailable";
-    return;
-  }
-  caption.textContent = `${apod.title || "APOD"} · ${apod.date || currentApodDate}${
-    apod.copyright ? ` · © ${apod.copyright}` : ""
-  } · NASA`;
-  animateIn(visual.querySelector(".apod-media, .apod-video, .apod-empty"));
+  body.innerHTML = renderApodCard(data.apod);
+  animateIn(body.querySelector(".apod-card"));
 }
 
 async function loadSpaceBundle() {

@@ -80,3 +80,15 @@ export function sourceLabel(source, updated) {
   const src = Array.isArray(source) ? source.join(" · ") : source || "—";
   return `Source: ${src}${updated ? ` · Updated ${fmtTime(updated)}` : ""}`;
 }
+
+/** Shared site footer for Explore + Orbit shells. */
+export function siteFooter() {
+  return `
+    <footer class="site-footer">
+      <p class="site-footer-credit">
+        powered by
+        <a href="https://agonmustafaj.com/" target="_blank" rel="noopener noreferrer">Agon Mustafaj</a>
+      </p>
+    </footer>
+  `;
+}

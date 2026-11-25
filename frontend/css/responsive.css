@@ -122,9 +122,14 @@
     min-width: 0;
   }
 
+  .apod-section,
   .orbit-section,
   .home-signals {
     padding: 20px 16px 28px;
+  }
+
+  .site-footer {
+    padding: 24px 16px 32px;
   }
 
   .orbit-section-head {
