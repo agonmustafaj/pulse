@@ -73,7 +73,7 @@ export async function renderSpace(root, params = {}) {
             <h3>International Space Station</h3>
             <div id="iss-panel"><div class="loading">Loading…</div></div>
             <div class="source-line bare" id="space-source"></div>
-            <div class="mono muted" id="iss-stamp">—</div>
+            <div class="mono muted" id="iss-stamp">-</div>
           </div>
         </div>
       </section>
@@ -190,7 +190,7 @@ async function load() {
       solar.setPlanets(data.planets);
       solar.start();
       document.getElementById("space-planet-attr").textContent = data.planets.attribution
-        ? `Source: ${data.planets.attribution} · Epoch ${data.planets.epoch || "—"}`
+        ? `Source: ${data.planets.attribution} · Epoch ${data.planets.epoch || "-"}`
         : sourceLabel(data.source, data.updated_at);
       const legend = document.getElementById("space-planet-legend");
       legend.innerHTML = (data.planets.planets || [])
@@ -231,7 +231,7 @@ async function load() {
         <div class="list-item launch-item">
           <div class="item-meta"><span class="badge cyan">${l.status || "scheduled"}</span><span>${l.provider || ""}</span></div>
           <div class="item-title">${l.name}</div>
-          <div class="item-meta"><span>${l.location || l.pad || "—"}</span><span>${l.net ? relativeTime(l.net) : ""}</span></div>
+          <div class="item-meta"><span>${l.location || l.pad || "-"}</span><span>${l.net ? relativeTime(l.net) : ""}</span></div>
         </div>`
           )
           .join("")
@@ -248,9 +248,9 @@ async function load() {
             (n) => `
           <tr>
             <td>${n.name}${n.hazardous ? ' <span class="badge amber">PHA</span>' : ""}</td>
-            <td class="mono">${n.miss_distance_km != null ? fmtNum(n.miss_distance_km, 0) : "—"}</td>
-            <td class="mono">${n.relative_velocity_kph != null ? fmtNum(n.relative_velocity_kph, 0) + " km/h" : "—"}</td>
-            <td class="mono">${n.close_approach || n.date || "—"}</td>
+            <td class="mono">${n.miss_distance_km != null ? fmtNum(n.miss_distance_km, 0) : "-"}</td>
+            <td class="mono">${n.relative_velocity_kph != null ? fmtNum(n.relative_velocity_kph, 0) + " km/h" : "-"}</td>
+            <td class="mono">${n.close_approach || n.date || "-"}</td>
             <td>${n.nasa_jpl_url ? `<a href="${n.nasa_jpl_url}" target="_blank" rel="noopener">JPL</a>` : ""}</td>
           </tr>`
           )
@@ -324,13 +324,13 @@ function renderIss(iss) {
     <div class="stat-grid">
       <div class="stat"><div class="label">Latitude</div><div class="value" style="font-size:16px">${fmtNum(iss.latitude, 3)}</div></div>
       <div class="stat"><div class="label">Longitude</div><div class="value" style="font-size:16px">${fmtNum(iss.longitude, 3)}</div></div>
-      <div class="stat"><div class="label">Altitude</div><div class="value" style="font-size:16px">${iss.altitude_km != null ? fmtNum(iss.altitude_km, 1) + " km" : "—"}</div></div>
-      <div class="stat"><div class="label">Velocity</div><div class="value" style="font-size:16px">${iss.velocity_kmh != null ? fmtNum(iss.velocity_kmh, 0) + " km/h" : "—"}</div></div>
+      <div class="stat"><div class="label">Altitude</div><div class="value" style="font-size:16px">${iss.altitude_km != null ? fmtNum(iss.altitude_km, 1) + " km" : "-"}</div></div>
+      <div class="stat"><div class="label">Velocity</div><div class="value" style="font-size:16px">${iss.velocity_kmh != null ? fmtNum(iss.velocity_kmh, 0) + " km/h" : "-"}</div></div>
     </div>
-    <div class="muted" style="margin-top:10px">Visibility: ${iss.visibility || "—"}</div>
+    <div class="muted" style="margin-top:10px">Visibility: ${iss.visibility || "-"}</div>
   `;
   const stamp = document.getElementById("iss-stamp");
-  if (stamp) stamp.textContent = `Updated ${iss.timestamp || "—"} · ${iss.source || ""}`;
+  if (stamp) stamp.textContent = `Updated ${iss.timestamp || "-"} · ${iss.source || ""}`;
   marker = upsertIssMarker(map, iss, marker);
   if (!issCentered) {
     issCentered = true;

@@ -1,7 +1,7 @@
 import { json, nowIso } from "../_lib/json.js";
 import { getApod } from "../_lib/services/space.js";
 
-/** GET /api/space/apod?date=YYYY-MM-DD — Astronomy Picture of the Day for a date (default today). */
+/** GET /api/space/apod?date=YYYY-MM-DD: Astronomy Picture of the Day for a date (default today). */
 export async function onRequestGet(context) {
   try {
     const url = new URL(context.request.url);

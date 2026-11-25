@@ -31,7 +31,7 @@ async def fetch_json(
                 resp = await client.get(url, params=params, headers=merged)
                 resp.raise_for_status()
                 return resp.json()
-        except Exception as exc:  # noqa: BLE001 — surface as provider failure upstream
+        except Exception as exc:  # noqa: BLE001: surface as provider failure upstream
             last_exc = exc
             if attempt < retries:
                 await asyncio.sleep(0.4 * (attempt + 1))

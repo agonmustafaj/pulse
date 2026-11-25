@@ -96,7 +96,7 @@ export function createSolarSystem(canvas, { onSelect } = {}) {
     ctx.arc(cx, cy, 6, 0, Math.PI * 2);
     ctx.fill();
 
-    // Planets — slow visual drift on top of real longitude for life
+    // Planets: slow visual drift on top of real longitude for life
     for (const p of planets) {
       const rad = visualRadius(p.a_au);
       const drift = reduced() ? 0 : elapsed * (0.015 / Math.sqrt(p.a_au));

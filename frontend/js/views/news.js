@@ -83,7 +83,7 @@ function select(id) {
   el.innerHTML = `
     <div class="item-meta"><span class="badge cyan">${a.category}</span><span>${a.source}</span></div>
     <h3 style="margin:8px 0">${a.headline}</h3>
-    <div class="mono muted">${a.published || "—"}</div>
+    <div class="mono muted">${a.published || "-"}</div>
     <p style="margin-top:12px">${a.description || "<span class='muted'>No summary provided by source.</span>"}</p>
     <a class="btn primary" style="margin-top:14px" href="${a.url}" target="_blank" rel="noopener">Read at source</a>
   `;

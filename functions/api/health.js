@@ -9,7 +9,7 @@ export async function onRequestGet(context) {
     service: "PULSE",
     runtime: "cloudflare-pages",
     updated_at: nowIso(),
-    // Boolean only — never echo the secret
+    // Boolean only: never echo the secret
     nasa_api_key_configured: hasNasaApiKey(env),
   });
 }

@@ -1,4 +1,4 @@
-/** Lightweight canvas starfield — pauses when prefers-reduced-motion. */
+/** Lightweight canvas starfield; pauses when prefers-reduced-motion. */
 
 export function createStarfield(canvas, { density = 1 } = {}) {
   const ctx = canvas.getContext("2d");

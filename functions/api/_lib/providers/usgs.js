@@ -27,7 +27,7 @@ export async function fetchEarthquakes(feed = "m45_day") {
     const timestamp = ts ? new Date(ts).toISOString() : null;
     const eid = `usgs-${feature.id || props.code}`;
     const place = props.place || "Unknown location";
-    const title = mag != null ? `M${mag} — ${place}` : place;
+    const title = mag != null ? `M${mag}: ${place}` : place;
     events.push({
       id: eid,
       title,

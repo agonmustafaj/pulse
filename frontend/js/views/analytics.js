@@ -9,7 +9,7 @@ export async function renderAnalytics(root) {
       <div>
         <div class="kicker">Trends</div>
         <h2>Analytics</h2>
-        <p class="muted">Derived from live cached events & news — not demo values</p>
+        <p class="muted">Derived from live cached events & news, not demo values</p>
       </div>
     </div>
     <div class="grid-3" id="an-totals"></div>

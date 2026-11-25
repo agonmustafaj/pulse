@@ -19,7 +19,7 @@ async function route() {
   const render = views[loc.view];
   if (render && el) await render(el, loc.params);
   refreshIcons();
-  document.title = `PULSE — ${getRoutes().find((r) => r.view === loc.view)?.label || "Explore"}`;
+  document.title = `PULSE: ${getRoutes().find((r) => r.view === loc.view)?.label || "Explore"}`;
 }
 
 function tickClock() {

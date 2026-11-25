@@ -1,4 +1,4 @@
-// OpenFreeMap tiles — free, no API key. https://openfreemap.org/
+// OpenFreeMap tiles: free, no API key. https://openfreemap.org/
 // Stock "dark" style is near-black land + water (looks empty). Orbit uses a
 // custom readable dark style: Natural Earth land texture + navy oceans.
 const STYLE_LIGHT = "https://tiles.openfreemap.org/styles/positron";
@@ -125,7 +125,7 @@ const STYLE_ORBIT_DARK = {
 const OSM_ATTRIBUTION =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · <a href="https://openfreemap.org/" target="_blank" rel="noopener">OpenFreeMap</a>';
 
-/** Default Orbit ISS view — wide enough to show continental context. */
+/** Default Orbit ISS view: wide enough to show continental context. */
 export const ISS_MAP_ZOOM = 1.75;
 
 export function createMap(container, { center = [0, 20], zoom = 1.6 } = {}) {

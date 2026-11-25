@@ -58,13 +58,13 @@ async function load() {
     document.getElementById("wx-current").innerHTML = `
       <div class="stat-grid">
         <div class="stat"><div class="label">Location</div><div class="value" style="font-size:15px">${c.location}</div></div>
-        <div class="stat"><div class="label">Condition</div><div class="value" style="font-size:15px">${c.condition || "—"}</div></div>
+        <div class="stat"><div class="label">Condition</div><div class="value" style="font-size:15px">${c.condition || "-"}</div></div>
         <div class="stat"><div class="label">Temp</div><div class="value">${fmtNum(c.temperature_c, 1)}°C</div></div>
         <div class="stat"><div class="label">Feels</div><div class="value">${fmtNum(c.feels_like_c, 1)}°C</div></div>
         <div class="stat"><div class="label">Humidity</div><div class="value">${fmtNum(c.humidity, 0)}%</div></div>
         <div class="stat"><div class="label">Wind</div><div class="value">${fmtNum(c.wind_speed_kmh, 0)} km/h</div></div>
         <div class="stat"><div class="label">Pressure</div><div class="value">${fmtNum(c.pressure_hpa, 0)} hPa</div></div>
-        <div class="stat"><div class="label">AQI</div><div class="value">${c.aqi != null ? fmtNum(c.aqi, 0) : "—"}</div></div>
+        <div class="stat"><div class="label">AQI</div><div class="value">${c.aqi != null ? fmtNum(c.aqi, 0) : "-"}</div></div>
       </div>
       <div class="mono muted" style="margin-top:10px">${fmtNum(c.latitude, 3)}, ${fmtNum(c.longitude, 3)} · ${c.local_time || ""} · ${c.timezone || ""}</div>
     `;
@@ -111,7 +111,7 @@ async function load() {
       .map(
         (d) =>
           `<div class="item-meta" style="justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border)">
-            <span>${d.date}</span><span>${d.condition || "—"}</span>
+            <span>${d.date}</span><span>${d.condition || "-"}</span>
             <span class="mono">${fmtNum(d.temp_min_c, 0)}° / ${fmtNum(d.temp_max_c, 0)}°</span>
           </div>`
       )

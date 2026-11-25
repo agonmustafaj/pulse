@@ -41,7 +41,7 @@ export async function renderOverview(root, params = {}) {
           <div class="galaxy-hero-content">
             <div class="brand-hero" aria-label="PULSE">PULSE</div>
             <h1 class="galaxy-headline">THE COSMOS. IN MOTION.</h1>
-            <p class="galaxy-lede">NASA skies, planets in orbit, and the ISS — a cinematic window into deep space.</p>
+            <p class="galaxy-lede">NASA skies, planets in orbit, and the ISS: a cinematic window into deep space.</p>
             <div class="galaxy-cta">
               <button type="button" class="btn primary" id="cta-orbit">Enter orbit</button>
               <button type="button" class="btn ghost" id="cta-iss">Track the ISS</button>
@@ -54,7 +54,7 @@ export async function renderOverview(root, params = {}) {
             <div>
               <div class="kicker">NASA APOD</div>
               <h2>Astronomy Picture of the Day</h2>
-              <p class="muted">Browse any day since June 16, 1995 — real NASA imagery, title, and explanation.</p>
+              <p class="muted">Browse any day since June 16, 1995: real NASA imagery, title, and explanation.</p>
             </div>
           </div>
           <div class="apod-section-controls">
@@ -70,9 +70,9 @@ export async function renderOverview(root, params = {}) {
             <div>
               <div class="kicker">Live ephemeris</div>
               <h2>Planets in orbit</h2>
-              <p class="muted">Heliocentric positions from JPL SSD mean elements — not decorative placeholders.</p>
+              <p class="muted">Heliocentric positions from JPL SSD mean elements, not decorative placeholders.</p>
             </div>
-            <div class="mono muted" id="planet-epoch">—</div>
+            <div class="mono muted" id="planet-epoch">-</div>
           </div>
           <div class="orbit-stage">
             <canvas id="solar-canvas" aria-label="Solar system visualization"></canvas>
@@ -183,7 +183,7 @@ async function loadSpaceBundle() {
       solar.start();
       document.getElementById("planet-epoch").textContent = planets.epoch
         ? `Epoch ${new Date(planets.epoch).toISOString().replace("T", " ").slice(0, 19)}Z`
-        : "—";
+        : "-";
       document.getElementById("orbit-attr").textContent = planets.attribution
         ? `Source: ${planets.attribution}`
         : "Source: JPL SSD";
@@ -195,13 +195,13 @@ async function loadSpaceBundle() {
         solar.start();
         document.getElementById("planet-epoch").textContent = p.epoch
           ? `Epoch ${new Date(p.epoch).toISOString().replace("T", " ").slice(0, 19)}Z`
-          : "—";
+          : "-";
         document.getElementById("orbit-attr").textContent = p.attribution || "JPL SSD";
         renderLegend(p.planets || []);
       } catch {
         solar.setPlanets(null);
         solar.start();
-        document.getElementById("orbit-attr").textContent = "Planet API unavailable — orbits shown with mean semi-major axes";
+        document.getElementById("orbit-attr").textContent = "Planet API unavailable. Orbits shown with mean semi-major axes";
       }
     }
 
@@ -210,7 +210,7 @@ async function loadSpaceBundle() {
     if (iss && issEl) {
       issEl.innerHTML = `
         <div class="signal-stat">${fmtNum(iss.latitude, 2)}°, ${fmtNum(iss.longitude, 2)}°</div>
-        <div class="muted">${iss.altitude_km != null ? fmtNum(iss.altitude_km, 0) + " km · " : ""}${iss.visibility || "—"}</div>
+        <div class="muted">${iss.altitude_km != null ? fmtNum(iss.altitude_km, 0) + " km · " : ""}${iss.visibility || "-"}</div>
         <button type="button" class="btn ghost compact" data-nav="/space?focus=iss">Open tracker</button>
       `;
     } else if (issEl) {
@@ -222,7 +222,7 @@ async function loadSpaceBundle() {
     if (launch && launchEl) {
       launchEl.innerHTML = `
         <div class="signal-stat">${launch.name}</div>
-        <div class="muted">${launch.provider || "—"} · ${launch.net ? relativeTime(launch.net) : "TBD"}</div>
+        <div class="muted">${launch.provider || "-"} · ${launch.net ? relativeTime(launch.net) : "TBD"}</div>
         <button type="button" class="btn ghost compact" data-nav="/space?focus=launches">All launches</button>
       `;
     } else if (launchEl) {
@@ -234,7 +234,7 @@ async function loadSpaceBundle() {
     if (neo && neoEl) {
       neoEl.innerHTML = `
         <div class="signal-stat">${neo.name}</div>
-        <div class="muted">${neo.miss_distance_km != null ? fmtNum(neo.miss_distance_km / 1e6, 2) + " M km miss" : "—"}${
+        <div class="muted">${neo.miss_distance_km != null ? fmtNum(neo.miss_distance_km / 1e6, 2) + " M km miss" : "-"}${
           neo.hazardous ? " · PHA" : ""
         }</div>
         <button type="button" class="btn ghost compact" data-nav="/space?focus=neos">Browse NEOs</button>

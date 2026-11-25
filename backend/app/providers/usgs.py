@@ -36,7 +36,7 @@ async def fetch_earthquakes(feed: str = "m45_day") -> list[Event]:
         timestamp = datetime.fromtimestamp(ts / 1000, tz=timezone.utc) if ts else None
         eid = f"usgs-{feature.get('id') or props.get('code')}"
         place = props.get("place") or "Unknown location"
-        title = f"M{mag} — {place}" if mag is not None else place
+        title = f"M{mag}: {place}" if mag is not None else place
         events.append(
             Event(
                 id=eid,

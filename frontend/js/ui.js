@@ -7,14 +7,14 @@ export function $$ (sel, root = document) {
 }
 
 export function fmtTime(iso) {
-  if (!iso) return "—";
+  if (!iso) return "-";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return String(iso);
   return d.toISOString().replace("T", " ").replace(/\.\d+Z$/, "Z");
 }
 
 export function fmtNum(n, digits = 2) {
-  if (n === null || n === undefined || Number.isNaN(n)) return "—";
+  if (n === null || n === undefined || Number.isNaN(n)) return "-";
   return Number(n).toLocaleString(undefined, { maximumFractionDigits: digits });
 }
 
@@ -77,7 +77,7 @@ export function animateIn(el) {
 }
 
 export function sourceLabel(source, updated) {
-  const src = Array.isArray(source) ? source.join(" · ") : source || "—";
+  const src = Array.isArray(source) ? source.join(" · ") : source || "-";
   return `Source: ${src}${updated ? ` · Updated ${fmtTime(updated)}` : ""}`;
 }
 
