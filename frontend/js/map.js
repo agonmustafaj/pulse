@@ -25,7 +25,7 @@ const STYLE_ORBIT_DARK = {
     {
       id: "background",
       type: "background",
-      paint: { "background-color": "#0a1522" },
+      paint: { "background-color": "#1e3a52" },
     },
     {
       id: "natural_earth",
@@ -33,11 +33,11 @@ const STYLE_ORBIT_DARK = {
       source: "ne2_shaded",
       maxzoom: 8,
       paint: {
-        "raster-opacity": ["interpolate", ["linear"], ["zoom"], 0, 0.72, 6, 0.35, 8, 0.12],
-        "raster-saturation": -0.55,
-        "raster-contrast": 0.2,
-        "raster-brightness-min": 0.02,
-        "raster-brightness-max": 0.62,
+        "raster-opacity": ["interpolate", ["linear"], ["zoom"], 0, 0.9, 6, 0.55, 8, 0.22],
+        "raster-saturation": -0.35,
+        "raster-contrast": 0.35,
+        "raster-brightness-min": 0.08,
+        "raster-brightness-max": 0.78,
       },
     },
     {
@@ -47,8 +47,8 @@ const STYLE_ORBIT_DARK = {
       "source-layer": "water",
       filter: ["match", ["geometry-type"], ["Polygon", "MultiPolygon"], true, false],
       paint: {
-        "fill-color": "#071525",
-        "fill-opacity": 0.94,
+        "fill-color": "#0c2a45",
+        "fill-opacity": 0.97,
       },
     },
     {
@@ -57,7 +57,7 @@ const STYLE_ORBIT_DARK = {
       source: "openmaptiles",
       "source-layer": "landcover",
       filter: ["==", ["get", "class"], "ice"],
-      paint: { "fill-color": "#3d5366", "fill-opacity": 0.55 },
+      paint: { "fill-color": "#7a93a8", "fill-opacity": 0.55 },
     },
     {
       id: "boundary-country",
@@ -70,9 +70,9 @@ const STYLE_ORBIT_DARK = {
         ["!", ["has", "claimed_by"]],
       ],
       paint: {
-        "line-color": "#6b8aa6",
-        "line-width": ["interpolate", ["linear"], ["zoom"], 0, 0.5, 4, 1.1, 8, 1.6],
-        "line-opacity": 0.9,
+        "line-color": "#9ec0db",
+        "line-width": ["interpolate", ["linear"], ["zoom"], 0, 0.7, 4, 1.35, 8, 2],
+        "line-opacity": 0.95,
       },
     },
     {
@@ -83,21 +83,21 @@ const STYLE_ORBIT_DARK = {
       filter: [
         "all",
         ["==", ["get", "class"], "country"],
-        ["<=", ["get", "rank"], 2],
+        ["<=", ["get", "rank"], 3],
       ],
       layout: {
         "text-field": ["coalesce", ["get", "name:en"], ["get", "name"]],
         "text-font": ["Noto Sans Regular"],
-        "text-size": ["interpolate", ["linear"], ["zoom"], 1, 11, 4, 15],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 1, 12, 4, 16],
         "text-transform": "uppercase",
         "text-letter-spacing": 0.06,
         "text-max-width": 8,
         "text-allow-overlap": false,
       },
       paint: {
-        "text-color": "#d7e4f0",
-        "text-halo-color": "rgba(7, 21, 37, 0.9)",
-        "text-halo-width": 1.4,
+        "text-color": "#f0f7ff",
+        "text-halo-color": "rgba(8, 28, 48, 0.92)",
+        "text-halo-width": 1.6,
       },
     },
     {
@@ -110,13 +110,13 @@ const STYLE_ORBIT_DARK = {
       layout: {
         "text-field": ["coalesce", ["get", "name:en"], ["get", "name"]],
         "text-font": ["Noto Sans Regular"],
-        "text-size": ["interpolate", ["linear"], ["zoom"], 3, 10, 8, 14],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 3, 11, 8, 15],
         "text-optional": true,
       },
       paint: {
-        "text-color": "#a8bfd4",
-        "text-halo-color": "rgba(7, 21, 37, 0.85)",
-        "text-halo-width": 1.1,
+        "text-color": "#c5d8ea",
+        "text-halo-color": "rgba(8, 28, 48, 0.88)",
+        "text-halo-width": 1.2,
       },
     },
   ],
@@ -125,8 +125,8 @@ const STYLE_ORBIT_DARK = {
 const OSM_ATTRIBUTION =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · <a href="https://openfreemap.org/" target="_blank" rel="noopener">OpenFreeMap</a>';
 
-/** Default Orbit ISS view — Earth context around the station. */
-export const ISS_MAP_ZOOM = 2;
+/** Default Orbit ISS view — wide enough to show continental context. */
+export const ISS_MAP_ZOOM = 1.75;
 
 export function createMap(container, { center = [0, 20], zoom = 1.6 } = {}) {
   const map = new maplibregl.Map({
