@@ -1,15 +1,137 @@
-// OpenFreeMap — free vector styles, no API key required.
-// https://openfreemap.org/
-const STYLE_DARK = "https://tiles.openfreemap.org/styles/dark";
+// OpenFreeMap tiles — free, no API key. https://openfreemap.org/
+// Stock "dark" style is near-black land + water (looks empty). Orbit uses a
+// custom readable dark style: Natural Earth land texture + navy oceans.
 const STYLE_LIGHT = "https://tiles.openfreemap.org/styles/positron";
 
-const OSM_ATTRIBUTION =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+const STYLE_ORBIT_DARK = {
+  version: 8,
+  name: "pulse-orbit-dark",
+  sources: {
+    ne2_shaded: {
+      type: "raster",
+      tiles: ["https://tiles.openfreemap.org/natural_earth/ne2sr/{z}/{x}/{y}.png"],
+      maxzoom: 6,
+      tileSize: 256,
+      attribution:
+        '<a href="https://www.naturalearthdata.com/" target="_blank" rel="noopener">Natural Earth</a>',
+    },
+    openmaptiles: {
+      type: "vector",
+      url: "https://tiles.openfreemap.org/planet",
+    },
+  },
+  glyphs: "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf",
+  layers: [
+    {
+      id: "background",
+      type: "background",
+      paint: { "background-color": "#1e3a52" },
+    },
+    {
+      id: "natural_earth",
+      type: "raster",
+      source: "ne2_shaded",
+      maxzoom: 8,
+      paint: {
+        "raster-opacity": ["interpolate", ["linear"], ["zoom"], 0, 0.9, 6, 0.55, 8, 0.22],
+        "raster-saturation": -0.35,
+        "raster-contrast": 0.35,
+        "raster-brightness-min": 0.08,
+        "raster-brightness-max": 0.78,
+      },
+    },
+    {
+      id: "water",
+      type: "fill",
+      source: "openmaptiles",
+      "source-layer": "water",
+      filter: ["match", ["geometry-type"], ["Polygon", "MultiPolygon"], true, false],
+      paint: {
+        "fill-color": "#0c2a45",
+        "fill-opacity": 0.97,
+      },
+    },
+    {
+      id: "landcover-ice",
+      type: "fill",
+      source: "openmaptiles",
+      "source-layer": "landcover",
+      filter: ["==", ["get", "class"], "ice"],
+      paint: { "fill-color": "#7a93a8", "fill-opacity": 0.55 },
+    },
+    {
+      id: "boundary-country",
+      type: "line",
+      source: "openmaptiles",
+      "source-layer": "boundary",
+      filter: [
+        "all",
+        ["==", ["get", "admin_level"], 2],
+        ["!", ["has", "claimed_by"]],
+      ],
+      paint: {
+        "line-color": "#9ec0db",
+        "line-width": ["interpolate", ["linear"], ["zoom"], 0, 0.7, 4, 1.35, 8, 2],
+        "line-opacity": 0.95,
+      },
+    },
+    {
+      id: "place-country",
+      type: "symbol",
+      source: "openmaptiles",
+      "source-layer": "place",
+      filter: [
+        "all",
+        ["==", ["get", "class"], "country"],
+        ["<=", ["get", "rank"], 3],
+      ],
+      layout: {
+        "text-field": ["coalesce", ["get", "name:en"], ["get", "name"]],
+        "text-font": ["Noto Sans Regular"],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 1, 12, 4, 16],
+        "text-transform": "uppercase",
+        "text-letter-spacing": 0.06,
+        "text-max-width": 8,
+        "text-allow-overlap": false,
+      },
+      paint: {
+        "text-color": "#f0f7ff",
+        "text-halo-color": "rgba(8, 28, 48, 0.92)",
+        "text-halo-width": 1.6,
+      },
+    },
+    {
+      id: "place-city",
+      type: "symbol",
+      source: "openmaptiles",
+      "source-layer": "place",
+      minzoom: 3,
+      filter: ["==", ["get", "class"], "city"],
+      layout: {
+        "text-field": ["coalesce", ["get", "name:en"], ["get", "name"]],
+        "text-font": ["Noto Sans Regular"],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 3, 11, 8, 15],
+        "text-optional": true,
+      },
+      paint: {
+        "text-color": "#c5d8ea",
+        "text-halo-color": "rgba(8, 28, 48, 0.88)",
+        "text-halo-width": 1.2,
+      },
+    },
+  ],
+};
 
-export function createMap(container, { center = [10, 20], zoom = 1.4 } = {}) {
+const OSM_ATTRIBUTION =
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · <a href="https://openfreemap.org/" target="_blank" rel="noopener">OpenFreeMap</a>';
+
+/** Default Orbit ISS view — wide enough to show continental context. */
+export const ISS_MAP_ZOOM = 1.75;
+
+export function createMap(container, { center = [0, 20], zoom = 1.6 } = {}) {
   const map = new maplibregl.Map({
     container,
-    style: STYLE_DARK,
+    style: STYLE_ORBIT_DARK,
     center,
     zoom,
     attributionControl: { compact: true, customAttribution: OSM_ATTRIBUTION },
@@ -20,7 +142,7 @@ export function createMap(container, { center = [10, 20], zoom = 1.4 } = {}) {
 }
 
 export function setDarkStyle(map, dark = true) {
-  map.setStyle(dark ? STYLE_DARK : STYLE_LIGHT);
+  map.setStyle(dark ? STYLE_ORBIT_DARK : STYLE_LIGHT);
 }
 
 export function eventsToGeoJSON(events) {
@@ -126,17 +248,25 @@ export function upsertEventLayers(map, geojson, { onClick } = {}) {
 }
 
 export function upsertIssMarker(map, iss, markerRef) {
-  if (!iss || iss.latitude == null) return markerRef;
+  if (!map || !iss || iss.latitude == null || iss.longitude == null) return markerRef;
+
+  if (markerRef) {
+    markerRef.setLngLat([iss.longitude, iss.latitude]);
+    return markerRef;
+  }
+
   const el = document.createElement("div");
   el.className = "iss-marker";
-  el.style.cssText =
-    "width:14px;height:14px;border-radius:50%;background:#38bdf8;box-shadow:0 0 12px #38bdf8;border:2px solid #0b1220;";
-  if (markerRef) markerRef.remove();
-  const marker = new maplibregl.Marker({ element: el }).setLngLat([iss.longitude, iss.latitude]).addTo(map);
-  return marker;
+  el.setAttribute("role", "img");
+  el.setAttribute("aria-label", "ISS position");
+  el.innerHTML = `<span class="iss-marker-core"></span><span class="iss-marker-label">ISS</span>`;
+
+  return new maplibregl.Marker({ element: el, anchor: "center" })
+    .setLngLat([iss.longitude, iss.latitude])
+    .addTo(map);
 }
 
-export function flyTo(map, lon, lat, zoom = 4) {
-  if (lon == null || lat == null) return;
+export function flyTo(map, lon, lat, zoom = ISS_MAP_ZOOM) {
+  if (!map || lon == null || lat == null) return;
   map.easeTo({ center: [lon, lat], zoom, duration: 900 });
 }

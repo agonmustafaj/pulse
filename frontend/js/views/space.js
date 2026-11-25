@@ -9,7 +9,7 @@ import {
   renderApodEmpty,
   todayUTC,
 } from "../apod.js";
-import { createMap, upsertIssMarker, flyTo } from "../map.js";
+import { createMap, upsertIssMarker, flyTo, ISS_MAP_ZOOM } from "../map.js";
 import { createSolarSystem } from "../solar-system.js";
 import {
   fmtNum,
@@ -26,10 +26,17 @@ let marker;
 let timer;
 let solar;
 let loaded;
+let issCentered;
 let currentApodDate = todayUTC();
+
+function initialOrbitTab(focus) {
+  if (focus === "iss" || focus === "apod" || focus === "launches" || focus === "neos") return focus;
+  return "planets";
+}
 
 export async function renderSpace(root, params = {}) {
   const focus = params.focus || "";
+  const tab = initialOrbitTab(focus);
 
   root.innerHTML = `
     <div class="space-page">
@@ -40,15 +47,15 @@ export async function renderSpace(root, params = {}) {
           <p class="muted">Planets · ISS · APOD archive · launches · near-Earth objects</p>
         </div>
         <div class="space-tabs" role="tablist">
-          <button type="button" class="chip${focus !== "iss" && focus !== "launches" && focus !== "neos" && focus !== "apod" ? " active" : ""}" data-tab="planets">Planets</button>
-          <button type="button" class="chip${focus === "iss" ? " active" : ""}" data-tab="iss">ISS</button>
-          <button type="button" class="chip${focus === "apod" ? " active" : ""}" data-tab="apod">APOD</button>
-          <button type="button" class="chip${focus === "launches" ? " active" : ""}" data-tab="launches">Launches</button>
-          <button type="button" class="chip${focus === "neos" ? " active" : ""}" data-tab="neos">NEOs</button>
+          <button type="button" class="chip${tab === "planets" ? " active" : ""}" data-tab="planets">Planets</button>
+          <button type="button" class="chip${tab === "iss" ? " active" : ""}" data-tab="iss">ISS</button>
+          <button type="button" class="chip${tab === "apod" ? " active" : ""}" data-tab="apod">APOD</button>
+          <button type="button" class="chip${tab === "launches" ? " active" : ""}" data-tab="launches">Launches</button>
+          <button type="button" class="chip${tab === "neos" ? " active" : ""}" data-tab="neos">NEOs</button>
         </div>
       </div>
 
-      <section class="space-panel active" data-panel="planets" id="panel-planets">
+      <section class="space-panel${tab === "planets" ? " active" : ""}" data-panel="planets" id="panel-planets">
         <div class="orbit-stage tall">
           <canvas id="space-solar" aria-label="Solar system"></canvas>
         </div>
@@ -56,9 +63,9 @@ export async function renderSpace(root, params = {}) {
         <div class="orbit-legend" id="space-planet-legend"></div>
       </section>
 
-      <section class="space-panel${focus === "iss" ? " active" : ""}" data-panel="iss" id="panel-iss">
+      <section class="space-panel${tab === "iss" ? " active" : ""}" data-panel="iss" id="panel-iss">
         <div class="grid-2 space-iss-grid">
-          <div class="map-frame">
+          <div class="map-frame" aria-label="ISS tracker map">
             <div id="space-map"></div>
           </div>
           <div class="space-side">
@@ -71,7 +78,7 @@ export async function renderSpace(root, params = {}) {
         </div>
       </section>
 
-      <section class="space-panel${focus === "apod" ? " active" : ""}" data-panel="apod" id="panel-apod">
+      <section class="space-panel${tab === "apod" ? " active" : ""}" data-panel="apod" id="panel-apod">
         <div class="apod-explorer">
           <div class="apod-explorer-head">
             <div>
@@ -89,13 +96,13 @@ export async function renderSpace(root, params = {}) {
         </div>
       </section>
 
-      <section class="space-panel${focus === "launches" ? " active" : ""}" data-panel="launches" id="panel-launches">
+      <section class="space-panel${tab === "launches" ? " active" : ""}" data-panel="launches" id="panel-launches">
         <div class="kicker">Launch Library</div>
         <h3>Upcoming launches</h3>
         <div id="launch-list"><div class="loading">Loading…</div></div>
       </section>
 
-      <section class="space-panel${focus === "neos" ? " active" : ""}" data-panel="neos" id="panel-neos">
+      <section class="space-panel${tab === "neos" ? " active" : ""}" data-panel="neos" id="panel-neos">
         <div class="kicker">NASA NeoWs</div>
         <h3>Near-Earth objects</h3>
         <p class="muted">Closest approaches in the current feed window.</p>
@@ -116,7 +123,16 @@ export async function renderSpace(root, params = {}) {
         p.classList.toggle("active", p.dataset.panel === tab);
       });
       if (tab === "iss") {
-        map?.resize();
+        requestAnimationFrame(() => {
+          map?.resize();
+          if (marker) {
+            const ll = marker.getLngLat();
+            if (!issCentered) {
+              issCentered = true;
+              flyTo(map, ll.lng, ll.lat, ISS_MAP_ZOOM);
+            }
+          }
+        });
         loadIss();
       }
       if (tab === "planets") solar?.start();
@@ -143,8 +159,9 @@ export async function renderSpace(root, params = {}) {
   } catch {
     /* map already torn down with DOM */
   }
-  map = createMap("space-map", { zoom: 1.5 });
+  map = createMap("space-map", { center: [0, 20], zoom: ISS_MAP_ZOOM });
   marker = null;
+  issCentered = false;
   loaded = true;
 
   await load();
@@ -152,9 +169,15 @@ export async function renderSpace(root, params = {}) {
   timer = setInterval(loadIss, 20000);
   refreshIcons();
 
-  // Focus scroll/tab already set via classes; ensure ISS map sized
-  if (focus === "iss") {
-    requestAnimationFrame(() => map?.resize());
+  // Ensure MapLibre sizes correctly when ISS panel is (or becomes) visible
+  if (tab === "iss") {
+    requestAnimationFrame(() => {
+      map?.resize();
+      if (marker) {
+        const ll = marker.getLngLat();
+        flyTo(map, ll.lng, ll.lat, ISS_MAP_ZOOM);
+      }
+    });
   }
 }
 
@@ -309,5 +332,8 @@ function renderIss(iss) {
   const stamp = document.getElementById("iss-stamp");
   if (stamp) stamp.textContent = `Updated ${iss.timestamp || "—"} · ${iss.source || ""}`;
   marker = upsertIssMarker(map, iss, marker);
-  flyTo(map, iss.longitude, iss.latitude, 2.4);
+  if (!issCentered) {
+    issCentered = true;
+    flyTo(map, iss.longitude, iss.latitude, ISS_MAP_ZOOM);
+  }
 }
